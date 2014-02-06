@@ -1,0 +1,400 @@
+{
+    "topic_types": [
+        {
+            "value": "Wikidata Search Bucket Query",
+            "uri": "org.deepamehta.wikidata.search_query",
+            "data_type_uri": "dm4.core.text",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "composite": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1,
+                        "dm4.webclient.locked": true
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Language Code (ISO 639-1)",
+            "uri": "org.deepamehta.wikidata.language_code_iso",
+            "data_type_uri": "dm4.core.text",
+            "index_mode_uris": ["dm4.core.key"],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "composite": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1,
+                        "dm4.webclient.locked": true
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Language Name",
+            "uri": "org.deepamehta.wikidata.language_name",
+            "data_type_uri": "dm4.core.text",
+            "index_mode_uris": ["dm4.core.fulltext", "dm4.core.key"],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "composite": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1,
+                        "dm4.webclient.locked": true
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Language",
+            "uri": "org.deepamehta.wikidata.language",
+            "data_type_uri": "dm4.core.composite",
+            "assoc_defs": [
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.language_name",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.language_code_iso",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                }
+            ],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "composite": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1,
+                        "dm4.webclient.locked": true
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Search Entity Label",
+            "uri": "org.deepamehta.wikidata.search_entity_label",
+            "data_type_uri": "dm4.core.text",
+            "index_mode_uris": ["dm4.core.fulltext", "dm4.core.key"],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "composite": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1,
+                        "dm4.webclient.locked": true
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Search Entity Description",
+            "uri": "org.deepamehta.wikidata.search_entity_description",
+            "data_type_uri": "dm4.core.text",
+            "index_mode_uris": ["dm4.core.fulltext"],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "composite": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 4,
+                        "dm4.webclient.locked": true
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Search Entity Alias",
+            "uri": "org.deepamehta.wikidata.search_entity_alias",
+            "data_type_uri": "dm4.core.text",
+            "index_mode_uris": ["dm4.core.fulltext", "dm4.core.key"],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "composite": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1,
+                        "dm4.webclient.locked": true
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Search Entity",
+            "uri": "org.deepamehta.wikidata.search_entity",
+            "data_type_uri": "dm4.core.composite",
+            "assoc_defs": [
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.search_entity_label",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.search_entity_description",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.search_entity_alias",
+                    "child_cardinality_uri": "dm4.core.many",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "dm4.webbrowser.url",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.language",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.aggregation_def"
+                }
+            ],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "composite": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1,
+                        "dm4.webclient.locked": true
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Search Bucket",
+            "uri": "org.deepamehta.wikidata.search_bucket",
+            "data_type_uri": "dm4.core.composite",
+            "assoc_defs": [
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.search_query",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.language",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.aggregation_def"
+                },
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.search_entity",
+                    "child_cardinality_uri": "dm4.core.many",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.aggregation_def"
+                }
+            ],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "composite": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 4,
+                        "dm4.webclient.locked": true,
+                        "dm4.webclient.page_renderer_uri" : "org.deepamehta.wikidata.search_bucket_renderer"
+                    }
+                }
+            ],
+            "label_config": [ "org.deepamehta.wikidata.search_query", "org.deepamehta.wikidata.language" ]
+        }
+    ], "topics": [ ### fixme: pull these instances from wikidata, i mean, thats the whole point, isnt it?
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_af",
+            "composite": {
+                "org.deepamehta.wikidata.language_name": "Afrikaans",
+                "org.deepamehta.wikidata.language_code_iso": "af"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_al",
+            "composite": {
+                "org.deepamehta.wikidata.language_name": "Albanian",
+                "org.deepamehta.wikidata.language_code_iso": "al"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_ar",
+            "composite": {
+                "org.deepamehta.wikidata.language_name": "Arabic",
+                "org.deepamehta.wikidata.language_code_iso": "ar"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_my",
+            "composite": {
+                "org.deepamehta.wikidata.language_name": "Burmes",
+                "org.deepamehta.wikidata.language_code_iso": "my"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_el",
+            "composite": {
+                "org.deepamehta.wikidata.language_name": "Greek",
+                "org.deepamehta.wikidata.language_code_iso": "el"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_pt",
+            "composite": {
+                "org.deepamehta.wikidata.language_name": "Portuguese",
+                "org.deepamehta.wikidata.language_code_iso": "pt"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_en",
+            "composite": {
+                "org.deepamehta.wikidata.language_name": "English",
+                "org.deepamehta.wikidata.language_code_iso": "en"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_fa",
+            "composite": {
+                "org.deepamehta.wikidata.language_name": "Persian",
+                "org.deepamehta.wikidata.language_code_iso": "fa"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_pl",
+            "composite": {
+                "org.deepamehta.wikidata.language_name": "Polish",
+                "org.deepamehta.wikidata.language_code_iso": "pl"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_sv",
+            "composite": {
+                "org.deepamehta.wikidata.language_name": "Swedish",
+                "org.deepamehta.wikidata.language_code_iso": "sv"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_tr",
+            "composite": {
+                "org.deepamehta.wikidata.language_name": "Turkish",
+                "org.deepamehta.wikidata.language_code_iso": "tr"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_ru",
+            "composite": {
+                "org.deepamehta.wikidata.language_name": "Russian",
+                "org.deepamehta.wikidata.language_code_iso": "ru"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_es",
+            "composite": {
+                "org.deepamehta.wikidata.language_name": "Spanish",
+                "org.deepamehta.wikidata.language_code_iso": "es"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_ja",
+            "composite": {
+                "org.deepamehta.wikidata.language_name": "Japanese",
+                "org.deepamehta.wikidata.language_code_iso": "ja"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_zh",
+            "composite": {
+                "org.deepamehta.wikidata.language_name": "Chinese",
+                "org.deepamehta.wikidata.language_code_iso": "zh"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_rn",
+            "composite": {
+                "org.deepamehta.wikidata.language_name": "Kirundi",
+                "org.deepamehta.wikidata.language_code_iso": "rn"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_ro",
+            "composite": {
+                "org.deepamehta.wikidata.language_name": "Romanian",
+                "org.deepamehta.wikidata.language_code_iso": "ro"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_sa",
+            "composite": {
+                "org.deepamehta.wikidata.language_name": "Sanskrit",
+                "org.deepamehta.wikidata.language_code_iso": "sa"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_id",
+            "composite": {
+                "org.deepamehta.wikidata.language_name": "Indonesian",
+                "org.deepamehta.wikidata.language_code_iso": "id"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_th",
+            "composite": {
+                "org.deepamehta.wikidata.language_name": "Thai",
+                "org.deepamehta.wikidata.language_code_iso": "th"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_sl",
+            "composite": {
+                "org.deepamehta.wikidata.language_name": "Slovene",
+                "org.deepamehta.wikidata.language_code_iso": "sl"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_sk",
+            "composite": {
+                "org.deepamehta.wikidata.language_name": "Slovak",
+                "org.deepamehta.wikidata.language_code_iso": "sk"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_de",
+            "composite": {
+                "org.deepamehta.wikidata.language_name": "German",
+                "org.deepamehta.wikidata.language_code_iso": "de"
+            }
+        }
+    ]
+}

@@ -1,0 +1,58 @@
+/** @author: mukil */
+
+.wikidata-page {
+    margin-top: 10px;
+}
+
+/** wikidata search-mode container in DM toolbar */
+.wikidata-search {
+    display: inline-block;
+}
+
+.wikidata-search-list {
+    padding-left: 0px;
+    margin-right: 20px;
+    margin-top: 20px;
+}
+
+li.wikidata-item {
+    padding-left: 20px;
+    position: relative;
+}
+
+li.wikidata-item .entity-name {
+    color: #006699;
+}
+
+li.wikidata-item .entity-description {
+    color: #484848;
+    font-size: 0.8em;
+    padding-left: 20px;
+    padding-right: 30px;
+}
+
+li.wikidata-item .create-type {
+    color: #990000;
+    font-weight: 900;
+    position: absolute;
+    padding: 5px;
+    top: -5px;
+    right: 20px;
+}
+
+li.wikidata-item .create-type:hover {
+    color: #339966;
+    cursor: pointer;
+}
+
+li.wikidata-item small {
+    /** float: right; */
+    color: 484848;
+}
+
+div.wikidata-query-info {
+    color: #990000;
+    margin-top: 10px;
+}
+
+/** blue: #006699; green: 339966; red: 990000; grey: 484848; */
