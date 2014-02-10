@@ -8,7 +8,7 @@
          // === Webclient Listeners ===
 
         dm4c.add_listener("init", function() {
-            dm4c.toolbar.searchmode_menu.add_item({label: "Wikidata Relation", value: "wikidata-type"})
+            dm4c.toolbar.searchmode_menu.add_item({label: "Wikidata Property", value: "wikidata-type"})
         })
 
         dm4c.add_listener("searchmode_widget", function(searchmode) {

@@ -136,6 +136,8 @@ public class TypeSearchPlugin extends PluginActivator {
                 json_result = resultBody.toString();
                 processWikidataEntitySearch(json_result, bucket_model);
                 search_bucket = dms.createTopic(new TopicModel(WD_SEARCH_BUCKET_URI, bucket_model), clientState);
+                // workaround: addRef does not (yet) fetchComposite, so fetchComposite=true
+                search_bucket = dms.getTopic(search_bucket.getId(), true);
                 log.info("Wikidata Search Bucket for "+ query +" in ("+ lang +") was CREATED");
             }
             tx.success();
@@ -240,7 +242,6 @@ public class TypeSearchPlugin extends PluginActivator {
                     String id = entity_response.getString("id");
                     Topic existing_entity = dms.getTopic("uri",
                             new SimpleValue(WD_SEARCH_ENTITIY_DATA_URI_PREFIX + id), false);
-                    TopicModel entity_model = null;
                     if (existing_entity == null) {
                         // Create new entity
                         String name = entity_response.getString("label");
@@ -262,13 +263,12 @@ public class TypeSearchPlugin extends PluginActivator {
                             }
                         }
                         // fixme: search-result does not include language information
-                        entity_model = new TopicModel(WD_SEARCH_ENTITIY_DATA_URI_PREFIX + id,
+                        TopicModel entity_model = new TopicModel(WD_SEARCH_ENTITIY_DATA_URI_PREFIX + id,
                                 WD_SEARCH_ENTITY_URI, entity_composite);
-                        // create new wikidata entity
-                        // reference new entity in wikidata search bucket
+                        // create and reference  entity in wikidata search bucket
                         search_bucket.add(WD_SEARCH_ENTITY_URI, entity_model);
                     } else {
-                        // reference new entity in wikidata search bucket by URI
+                        // reference existing entity in wikidata search bucket by URI
                         search_bucket.addRef(WD_SEARCH_ENTITY_URI, WD_SEARCH_ENTITIY_DATA_URI_PREFIX + id);
                     }
                 }
