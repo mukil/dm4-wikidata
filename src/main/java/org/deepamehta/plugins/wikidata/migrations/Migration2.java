@@ -2,7 +2,10 @@ package org.deepamehta.plugins.wikidata.migrations;
 
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.TopicType;
-import de.deepamehta.core.model.*;
+import de.deepamehta.core.model.AssociationModel;
+import de.deepamehta.core.model.SimpleValue;
+import de.deepamehta.core.model.TopicModel;
+import de.deepamehta.core.model.TopicRoleModel;
 import de.deepamehta.core.service.Migration;
 import java.util.logging.Logger;
 
@@ -12,7 +15,7 @@ import java.util.logging.Logger;
  *
  * @author Malte Reißig (<malte@mikromedia.de>)
  * @website https://github.com/mukil/dm4-wikidata
- * @version 0.0.1-SNAPSHOT
+ * @version 0.0.1
  */
 
 public class Migration2 extends Migration {

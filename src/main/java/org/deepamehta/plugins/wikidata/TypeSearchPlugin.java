@@ -27,7 +27,7 @@ import org.codehaus.jettison.json.JSONObject;
  *
  * @author Malte Reißig (<malte@mikromedia.de>)
  * @website https://github.com/mukil/dm4-wikidata
- * @version 0.0.1-SNAPSHOT
+ * @version 0.0.1
  *
  */
 

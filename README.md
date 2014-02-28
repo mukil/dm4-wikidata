@@ -10,7 +10,7 @@ Its functionality also enables you to build on these structures in your personal
 
 ## Download
 
-You can soon find the freshest installable bundle available for end-users at [http://download.deepamehta.de/nightly](http://download.deepamehta.de/nightly/).
+You can find the installable bundle-file at [http://download.deepamehta.de](http://download.deepamehta.de).
 
 
 ## Installation
@@ -31,6 +31,9 @@ This software is released under the terms of the GNU General Public License in V
 
 
 # Development History
+
+0.0.1, Feb 28, 2014
+- Compatible with DeepaMehta 4.2
 
 0.0.1-SNAPSHOT, Feb 05, 2014
 
