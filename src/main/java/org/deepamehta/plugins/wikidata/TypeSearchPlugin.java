@@ -1,9 +1,11 @@
 package org.deepamehta.plugins.wikidata;
 
+import de.deepamehta.core.AssociationType;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.*;
 import de.deepamehta.core.osgi.PluginActivator;
 import de.deepamehta.core.service.ClientState;
+import de.deepamehta.core.service.Directives;
 import de.deepamehta.core.service.PluginService;
 import de.deepamehta.core.service.annotation.ConsumesService;
 import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
@@ -65,6 +67,7 @@ public class TypeSearchPlugin extends PluginActivator {
 
     private final String WD_SEARCH_ENTITY_URI = "org.deepamehta.wikidata.search_entity";
     private final String WD_SEARCH_ENTITY_LABEL_URI = "org.deepamehta.wikidata.search_entity_label";
+    private final String WD_SEARCH_ENTITY_TYPE_URI = "org.deepamehta.wikidata.search_entity_type";
     private final String WD_SEARCH_ENTITY_DESCR_URI = "org.deepamehta.wikidata.search_entity_description";
     private final String WD_SEARCH_ENTITY_ALIAS_URI = "org.deepamehta.wikidata.search_entity_alias";
     private final String WD_SEARCH_ENTITIY_DATA_URI_PREFIX = "org.deepamehta.wikidata.entity_";
@@ -92,10 +95,10 @@ public class TypeSearchPlugin extends PluginActivator {
      */
 
     @GET
-    @Path("/property/search/{query}/{language_code}")
+    @Path("/search/{entity}/{query}/{language_code}")
     @Produces(MediaType.APPLICATION_JSON)
     public Topic searchWikidataProperty(@PathParam("query") String query, @PathParam("language_code") String lang,
-                @HeaderParam("Cookie") ClientState clientState) {
+                @HeaderParam("Cookie") ClientState clientState, @PathParam("entity") String type) {
 
         String json_result = "";
         StringBuffer resultBody = new StringBuffer();
@@ -104,14 +107,13 @@ public class TypeSearchPlugin extends PluginActivator {
         DeepaMehtaTransaction tx = dms.beginTx();
         try {
             // 1) fixme: Authorize request
-            requestUri = new URL(WD_SEARCH_ENTITIES_ENDPOINT + "&search="+ query +"&language="+ lang +"&type="
-                    + WD_SEARCH_ENTITY_TYPE_PROPERTY); // maybe restrict results to DataType=Item
-            log.fine("Requesting Wikidata " + requestUri.toString());
+            requestUri = new URL(WD_SEARCH_ENTITIES_ENDPOINT + "&search="+ query +"&language="+ lang +"&type=" + type);
+            log.fine("Requesting Wikidata Entity " + requestUri.toString());
             // 2) initiate request
             HttpURLConnection connection = (HttpURLConnection) requestUri.openConnection();
             connection.setRequestMethod("GET");
             connection.setRequestProperty("User-Agent", "DeepaMehta "+DEEPAMEHTA_VERSION+" - "
-                    + "Wikidata Relation Type Search " + WIKIDATA_TYPE_SEARCH_VERSION);
+                    + "Wikidata Search " + WIKIDATA_TYPE_SEARCH_VERSION);
             // 3) check the response
             int httpStatusCode = connection.getResponseCode();
             if (httpStatusCode != HttpURLConnection.HTTP_OK) {
@@ -134,7 +136,7 @@ public class TypeSearchPlugin extends PluginActivator {
                 bucket_model.put(WD_SEARCH_QUERY_URI, query);
                 bucket_model.putRef(WD_LANGUAGE_URI, WD_LANGUAGE_DATA_URI_PREFIX + lang);
                 json_result = resultBody.toString();
-                processWikidataEntitySearch(json_result, bucket_model);
+                processWikidataEntitySearch(json_result, bucket_model, type, lang);
                 search_bucket = dms.createTopic(new TopicModel(WD_SEARCH_BUCKET_URI, bucket_model), clientState);
                 // workaround: addRef does not (yet) fetchComposite, so fetchComposite=true
                 search_bucket = dms.getTopic(search_bucket.getId(), true);
@@ -145,8 +147,9 @@ public class TypeSearchPlugin extends PluginActivator {
             log.warning("Wikidata Plugin: MalformedURLException ..." + e.getMessage());
             throw new RuntimeException("Could not find wikidata endpoint.", e);
         } catch (IOException ioe) {
-            log.warning("Wikidata Plugin: IOException ..." + ioe.getMessage());
-            throw new WebApplicationException(new Throwable("... dunnow"), Status.BAD_REQUEST);
+            throw new WebApplicationException(new Throwable(ioe), Status.BAD_REQUEST);
+        } catch (Exception e) {
+            throw new WebApplicationException(new Throwable(e), Status.INTERNAL_SERVER_ERROR);
         } finally {
             tx.finish();
             return search_bucket;
@@ -163,9 +166,9 @@ public class TypeSearchPlugin extends PluginActivator {
     @Path("/property/turn/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Topic createWikidataAssociationType(@PathParam("id") long id,
-                @HeaderParam("Cookie") ClientState clientState) {
+            @HeaderParam("Cookie") ClientState clientState) {
 
-        Topic association_type = null;
+        AssociationType association_type = null;
         DeepaMehtaTransaction tx = dms.beginTx();
         try {
             Topic property_entity = dms.getTopic(id, true);
@@ -177,8 +180,12 @@ public class TypeSearchPlugin extends PluginActivator {
             association_type = dms.createAssociationType(assoc_type_model, clientState);
             // 2) Assign to "Wikidata" Workspace
             assignToWikidataWorkspace(association_type);
-            // 3) fixme: assign serch-result entity to new assoc-type (to keep track)
-            log.info("Turned wikidata property \""+ property_entity.getSimpleValue() +"\" into DM Association Type!");
+            // 3) Associated search-result-entity to new assoc-type (to keep track)
+            dms.createAssociation(new AssociationModel("dm4.core.association",
+                    new TopicRoleModel(property_entity.getUri(), "dm4.core.default"),
+                    new TopicRoleModel(association_type.getUri(), "dm4.core.default")
+                    ), clientState);
+            log.info("Turned wikidata property \""+ property_entity.getUri() +"\" into DM Association Type!");
             tx.success();
         } catch (Error e) {
             log.warning("OH: The Wikidata Plugin experienced an unforeseen error! "+ e.getMessage());
@@ -231,7 +238,8 @@ public class TypeSearchPlugin extends PluginActivator {
         // todo:
     }
 
-    private void processWikidataEntitySearch(String json_result, CompositeValueModel search_bucket) {
+    private void processWikidataEntitySearch(String json_result, CompositeValueModel search_bucket,
+            String type, String lang) {
         try {
             JSONObject response = new JSONObject(json_result);
             JSONArray result = response.getJSONArray("search");
@@ -243,10 +251,10 @@ public class TypeSearchPlugin extends PluginActivator {
                     Topic existing_entity = dms.getTopic("uri",
                             new SimpleValue(WD_SEARCH_ENTITIY_DATA_URI_PREFIX + id), false);
                     if (existing_entity == null) {
-                        // Create new entity
+                        // Create new search entity composite
                         String name = entity_response.getString("label");
                         String url = entity_response.getString("url");
-                        // setup new wikidata entity
+                        //
                         CompositeValueModel entity_composite = new CompositeValueModel();
                         entity_composite.put(WD_SEARCH_ENTITY_LABEL_URI, name);
                         if (entity_response.has("description")) {
@@ -262,7 +270,7 @@ public class TypeSearchPlugin extends PluginActivator {
                                     new TopicModel(WD_SEARCH_ENTITY_ALIAS_URI, new SimpleValue(alias)));
                             }
                         }
-                        // fixme: search-result does not include language information
+                        entity_composite.put(WD_SEARCH_ENTITY_TYPE_URI, type);
                         TopicModel entity_model = new TopicModel(WD_SEARCH_ENTITIY_DATA_URI_PREFIX + id,
                                 WD_SEARCH_ENTITY_URI, entity_composite);
                         // create and reference  entity in wikidata search bucket

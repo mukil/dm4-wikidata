@@ -1,0 +1,21 @@
+{
+    "topic_types": [
+        {
+            "value": "Wikidata Search Entity Type",
+            "uri": "org.deepamehta.wikidata.search_entity_type",
+            "data_type_uri": "dm4.core.text",
+            "index_mode_uris": ["dm4.core.fulltext", "dm4.core.key"],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "composite": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1,
+                        "dm4.webclient.locked": true
+                    }
+                }
+            ]
+        }
+    ]
+}

@@ -7,7 +7,7 @@
     <name>DeepaMehta 4 Wikidata</name>
     <groupId>org.deepamehta</groupId>
     <artifactId>dm42-wikidata-type-search</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2-SNAPSHOT</version>
     <packaging>bundle</packaging>
 
     <parent>
@@ -31,7 +31,9 @@
                 <artifactId>maven-bundle-plugin</artifactId>
                 <configuration>
                     <instructions>
-                        <Bundle-SymbolicName>org.deepamehta.wikidata</Bundle-SymbolicName>
+                        <Bundle-SymbolicName>
+                            org.deepamehta.wikidata
+                        </Bundle-SymbolicName>
                         <Bundle-Activator>
                             org.deepamehta.plugins.wikidata.TypeSearchPlugin
                         </Bundle-Activator>

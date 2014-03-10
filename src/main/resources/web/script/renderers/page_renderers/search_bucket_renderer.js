@@ -13,11 +13,11 @@
 
         render_page: function(topic) {
 
-            var search_query = topic.value
+            var search_query = topic.composite['org.deepamehta.wikidata.search_query'].value
             var search_language = topic.composite['org.deepamehta.wikidata.language'].value
             var search_entities = topic.composite['org.deepamehta.wikidata.search_entity']
 
-            render('<div class="field-label">Wikidata Property Search Query</div>')
+            render('<div class="field-label">Wikidata Search Query</div>')
             render('<div class="wikidata-query-info">\"'+ search_query + '\" ('+ search_language +')</div>')
             render('<div class="field-label">Search Results</div>')
             render('<ol class="wikidata-search-list">')
@@ -42,13 +42,29 @@
                         alias_names += ' '+ aliases[k].value
                     }
                 }
+                var item_type = result_item.composite['org.deepamehta.wikidata.search_entity_type'].value
                 var $list_item = $('<li class="wikidata-item">')
-                var $item_name = $('<div class="entity-name">').text(entity_name)
-                var $item_add = $('<a class="create-type" id="'+ entity_id +'" title="Turn property into '
-                    + 'new Association Type" href="#turn">').text("+")
-                    $item_add.click(function(e) {
-                        dm4c.restc.request("GET", "/wikidata/property/turn/" + e.target.id)
-                    })
+                var $item_name = ""
+                if (item_type === "item") {
+                    $item_name = $('<div class="item entity-name" '
+                        + 'title="Reveal search entity" id="name-'+ entity_id +'">').text(entity_name)
+                    $item_name.click(function(e) { dm4c.do_reveal_related_topic(e.target.id.substr(5), "show") })
+                    /** var $item_add = $('<a class="create-type" id="'+ entity_id +'" title="Create Wikidata Item"'
+                        + ' href="#turn">').text("+")
+                        $item_add.click(function(e) {
+                            dm4c.restc.request("GET", "/wikidata/item/turn/" + e.target.id)
+                        }) **/
+                } else if (item_type === "property") {
+                    $item_name = $('<div class="property entity-name" '
+                        + '"title="Reveal search entity" id="name-'+ entity_id +'">').text(entity_name)
+                    $item_name.click(function(e) { dm4c.do_reveal_related_topic(e.target.id.substr(5), "show") })
+                    var $item_add = $('<a class="create-type" id="'+ entity_id +'" title="Turn property into '
+                        + 'new Association Type" href="#turn">').text("+")
+                        $item_add.click(function(e) {
+                            dm4c.restc.request("GET", "/wikidata/property/turn/" + e.target.id)
+                        })
+
+                }
                 var $item_descr = $('<div class="entity-description">').text(entity_description.value)
                     if (alias_names != "") $item_descr.append('<br/><b>Aliases</b>: '+ alias_names)
 

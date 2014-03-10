@@ -13,16 +13,17 @@
     dm4c.add_plugin('org.deepamehta.wikidata-type-search', function () {
 
         var language_menu
+        var search_type_menu
 
          // === Webclient Listeners ===
 
         dm4c.add_listener("init", function() {
-            dm4c.toolbar.searchmode_menu.add_item({label: "Wikidata Property", value: "wikidata-type"})
+            dm4c.toolbar.searchmode_menu.add_item({label: "Wikidata Search", value: "wikidata-search"})
         })
 
         dm4c.add_listener("searchmode_widget", function(searchmode) {
 
-            if (searchmode == "wikidata-type") {
+            if (searchmode == "wikidata-search") {
 
                 // enable search button
                 dm4c.toolbar.search_button.button("enable")
@@ -33,7 +34,11 @@
                 // create wikidata search menu
                 var $container = $('<div class="wikidata-search">')
                 var $input_field= $('<input type="text" class="wikidata-type-search">')
-                /** var $search_language_field = $('<select type="option" class="wikidata-search-language">') **/
+                // create search type menu
+                search_type_menu = dm4c.ui.menu()
+                search_type_menu.add_item({label: "Item", value: "item"})
+                search_type_menu.add_item({label: "Property", value: "property"})
+                // create language selector
                 language_menu = dm4c.ui.menu()
                 for (var i=0; i < languages.length; i++) {
 
@@ -48,11 +53,11 @@
 
                 }
                 language_menu.select("en")
-                $container.append(language_menu.dom).append($input_field)
+                $container.append(search_type_menu.dom).append(language_menu.dom).append($input_field)
 
                 // register ENTER handler
                 dm4c.on_return_key($input_field, function() {
-                    dm4c.do_search("wikidata-type")
+                    dm4c.do_search("wikidata-search")
                 })
 
                 return $container
@@ -62,18 +67,23 @@
 
         dm4c.add_listener("search", function(searchmode) {
 
-            if (searchmode == "wikidata-type") {
+            if (searchmode == "wikidata-search") {
 
                 var search_value = $('input.wikidata-type-search').val()
+                    search_value = encodeURIComponent(search_value)
 
                 if (search_value !== "" && search_value !== " ") {
-                    return dm4c.restc.request("GET", "/wikidata/property/search/"+ search_value +'/'
-                        + get_language_value())
+                    return dm4c.restc.request("GET", "/wikidata/search/" + get_search_type_value() + "/"
+                        + search_value + '/' + get_language_value())
                 }
             }
 
             function get_language_value() {
                 return language_menu.get_selection().value
+            }
+
+            function get_search_type_value() {
+                return search_type_menu.get_selection().value
             }
 
         })

@@ -21,7 +21,12 @@ li.wikidata-item {
 }
 
 li.wikidata-item .entity-name {
+    cursor: pointer;
     color: #006699;
+}
+
+li.wikidata-item .entity-name:hover {
+    color: #990000;
 }
 
 li.wikidata-item .entity-description {
