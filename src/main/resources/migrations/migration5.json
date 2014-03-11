@@ -1,0 +1,83 @@
+
+{
+    "topic_types": [
+        {
+            "value": "Wikidata Text",
+            "uri": "org.deepamehta.wikidata.text",
+            "data_type_uri": "dm4.core.text",
+            "index_mode_uris": ["dm4.core.fulltext", "dm4.core.key"],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "composite": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1,
+                        "dm4.webclient.locked": true
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Commons Media",
+            "uri": "org.deepamehta.wikidata.commons_media",
+            "data_type_uri": "dm4.core.composite",
+            "assoc_defs": [
+                {
+                    "child_type_uri": "dm4.files.file",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                }
+            ],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "composite": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1,
+                        "dm4.webclient.locked": true
+                    }
+                }
+            ]
+        },
+         {
+            "value": "Wikidata Globe Coordinate",
+            "uri": "org.deepamehta.wikidata.globe_coordinate",
+            "data_type_uri": "dm4.core.composite",
+            "assoc_defs": [
+                {
+                    "child_type_uri": "dm4.geomaps.geo_coordinate",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                }
+            ],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "composite": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1,
+                        "dm4.webclient.locked": true
+                    }
+                }
+            ]
+        }
+    ],
+    "assoc_types": [
+        {
+            "value": "Wikidata Claim",
+            "uri": "org.deepamehta.wikidata.claim_edge",
+            "data_type_uri": "dm4.core.text",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "composite": {
+                        "dm4.webclient.color": "#006699"
+                    }
+                }
+            ]
+        }
+    ]
+}

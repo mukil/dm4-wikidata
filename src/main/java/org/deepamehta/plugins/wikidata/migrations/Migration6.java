@@ -16,28 +16,23 @@ import java.util.logging.Logger;
  * @version 0.0.2-SNAPSHOT
  */
 
-public class Migration4 extends Migration {
+public class Migration6 extends Migration {
 
     private Logger log = Logger.getLogger(getClass().getName());
-
-    private final static String WD_SEARCH_ENTITY_TYPE = "org.deepamehta.wikidata.search_entity_type";
-    private final static String WD_SEARCH_ENTITY = "org.deepamehta.wikidata.search_entity";
 
     private final String WS_WIKIDATA_URI = "org.deepamehta.workspaces.wikidata";
 
     @Override
     public void run() {
 
-        // 1) assign "admin" username to \"Wikidata\"-Workspace
-        TopicType searchEntity = dms.getTopicType(WD_SEARCH_ENTITY);
-        TopicType searchEntityType = dms.getTopicType(WD_SEARCH_ENTITY_TYPE);
-        searchEntity.addAssocDef(new AssociationDefinitionModel("dm4.core.composition_def",
-                searchEntity.getUri(), searchEntityType.getUri(), "dm4.core.one", "dm4.core.one"));
-        log.info("1) Assigned \"Search Entity Type\" to \"Search Entity\"");
-        // "dm4.webclient.page_renderer_uri" : "org.deepamehta.wikidata.search_entity_renderer"
-        // log.info("2) Assigned new search entity renderer to \"Search Entity\" Topic Type");
-        // 3) remove "org.deepamehta.wikidata.language" from WD_SEARCH_ENTITY
-        searchEntity.removeAssocDef("org.deepamehta.wikidata.language");
+        TopicType coordinate = dms.getTopicType("org.deepamehta.wikidata.globe_coordinate");
+        assignWorkspace(coordinate);
+        TopicType commons_media = dms.getTopicType("org.deepamehta.wikidata.commons_media");
+        assignWorkspace(commons_media);
+        TopicType text = dms.getTopicType("org.deepamehta.wikidata.text");
+        assignWorkspace(text);
+        AssociationType claim = dms.getAssociationType("org.deepamehta.wikidata.claim_edge");
+        assignWorkspace(claim);
 
     }
 

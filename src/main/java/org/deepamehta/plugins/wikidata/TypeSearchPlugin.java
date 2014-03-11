@@ -1,5 +1,6 @@
 package org.deepamehta.plugins.wikidata;
 
+import de.deepamehta.core.Association;
 import de.deepamehta.core.AssociationType;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.*;
@@ -16,6 +17,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 import java.util.logging.Logger;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -29,7 +31,7 @@ import org.codehaus.jettison.json.JSONObject;
  *
  * @author Malte Reißig (<malte@mikromedia.de>)
  * @website https://github.com/mukil/dm4-wikidata
- * @version 0.0.1
+ * @version 0.0.2-SNAPSHOT
  *
  */
 
@@ -72,10 +74,17 @@ public class TypeSearchPlugin extends PluginActivator {
     private final String WD_SEARCH_ENTITY_ALIAS_URI = "org.deepamehta.wikidata.search_entity_alias";
     private final String WD_SEARCH_ENTITIY_DATA_URI_PREFIX = "org.deepamehta.wikidata.entity_";
 
+    private final String WD_ENTITY_CLAIM_EDGE = "org.deepamehta.wikidata.claim_edge";
+    private final String WD_ENTITY_CLAIM_SEARCH_EDGE = "org.deepamehta.wikidata.claim_search_filter_edge";
+
     // --- Wikidata Service URIs
 
     private final String WD_SEARCH_ENTITIES_ENDPOINT =
             "http://www.wikidata.org/w/api.php?action=wbsearchentities&format=json&limit=50";
+    private final String WD_CHECK_ENTITY_CLAIMS_ENDPOINT =
+            "http://www.wikidata.org/w/api.php?action=wbgetclaims&ungroupedlist=1&format=json";
+    private final String WD_GET_ENTITY_ENDPOINT = "http://www.wikidata.org/w/api.php?action=wbgetentities"
+            + "&props=info%7Csitelinks%2Furls%7Caliases%7Clabels%7Cdescriptions&dir=ascending&format=json";
     private final String WD_SEARCH_ENTITY_TYPE_PROPERTY = "property";
     private final String WD_SEARCH_ENTITY_TYPE_ITEM = "item";
 
@@ -90,6 +99,7 @@ public class TypeSearchPlugin extends PluginActivator {
     /**
      *  This method searches a wikidata a \"Property\" by simple text-query:
      *
+     *  @param {entity}             entity-type (either "item" or "property")
      *  @param {query}              name of wikidata property in search
      *  @param {language_code}      ISO 639-1 language code (must exist in DM installation)
      */
@@ -97,7 +107,7 @@ public class TypeSearchPlugin extends PluginActivator {
     @GET
     @Path("/search/{entity}/{query}/{language_code}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Topic searchWikidataProperty(@PathParam("query") String query, @PathParam("language_code") String lang,
+    public Topic searchWikidataEntity(@PathParam("query") String query, @PathParam("language_code") String lang,
                 @HeaderParam("Cookie") ClientState clientState, @PathParam("entity") String type) {
 
         String json_result = "";
@@ -108,7 +118,7 @@ public class TypeSearchPlugin extends PluginActivator {
         try {
             // 1) fixme: Authorize request
             requestUri = new URL(WD_SEARCH_ENTITIES_ENDPOINT + "&search="+ query +"&language="+ lang +"&type=" + type);
-            log.fine("Requesting Wikidata Entity " + requestUri.toString());
+            log.fine("Searchin Wikidata Entity " + requestUri.toString());
             // 2) initiate request
             HttpURLConnection connection = (HttpURLConnection) requestUri.openConnection();
             connection.setRequestMethod("GET");
@@ -145,14 +155,153 @@ public class TypeSearchPlugin extends PluginActivator {
             tx.success();
         } catch (MalformedURLException e) {
             log.warning("Wikidata Plugin: MalformedURLException ..." + e.getMessage());
+            tx.failure();
             throw new RuntimeException("Could not find wikidata endpoint.", e);
         } catch (IOException ioe) {
+            tx.failure();
             throw new WebApplicationException(new Throwable(ioe), Status.BAD_REQUEST);
         } catch (Exception e) {
+            tx.failure();
             throw new WebApplicationException(new Throwable(e), Status.INTERNAL_SERVER_ERROR);
         } finally {
             tx.finish();
             return search_bucket;
+        }
+    }
+
+    /**
+     *  This method gets (or creates) a wikidata a \"Entity\" by its ID.
+     *
+     *  @param {entityId}           wikidataId
+     */
+
+    @GET
+    @Path("/{entityId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Topic getOrCreateWikidataEntity(@PathParam("entityId") String entityId,
+        @HeaderParam("Cookie") ClientState clientState) {
+
+        String lang = "en";
+        String json_result = "";
+        StringBuffer resultBody = new StringBuffer();
+        URL requestUri = null;
+        Topic entity = null;
+        try {
+            // 0) Check if HTTTP request is valid
+            Topic existingEntity = dms.getTopic("uri",
+                        new SimpleValue(WD_SEARCH_ENTITIY_DATA_URI_PREFIX + entityId), true);
+            if (existingEntity == null) {
+                // 1) fixme: Authorize request
+                // &sites=dewiki&&languages=de
+                requestUri = new URL(WD_GET_ENTITY_ENDPOINT + "&ids="+ entityId + "&languages=" + lang); // &ids=Q5
+                log.fine("Requesting Wikidata Entity " + requestUri.toString());
+                // 2) initiate request
+                HttpURLConnection connection = (HttpURLConnection) requestUri.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setRequestProperty("User-Agent", "DeepaMehta "+DEEPAMEHTA_VERSION+" - "
+                        + "Wikidata Search " + WIKIDATA_TYPE_SEARCH_VERSION);
+                // 3) check the response
+                int httpStatusCode = connection.getResponseCode();
+                if (httpStatusCode != HttpURLConnection.HTTP_OK) {
+                    throw new WebApplicationException(new Throwable("Error with HTTPConnection."),
+                            Status.INTERNAL_SERVER_ERROR);
+                }
+                // 4) read in the response
+                BufferedReader rd = new BufferedReader(new InputStreamReader(connection.getInputStream(), CHARSET));
+                for (String input; (input = rd.readLine()) != null;) {
+                    resultBody.append(input);
+                }
+                rd.close();
+                // 5) process response
+                if (resultBody.toString().isEmpty()) {
+                    throw new WebApplicationException(new RuntimeException("Wikidata was silent."),
+                            Status.NO_CONTENT);
+                } else {
+                    // ..) Create Wikidata Search Entity
+                    json_result = resultBody.toString();
+                    JSONObject response = new JSONObject(json_result);
+                    JSONObject entities = response.getJSONObject("entities");
+                    JSONObject response_entity = entities.getJSONObject(entityId);
+                    entity = createWikidataSearchEntity(response_entity, lang, clientState);
+                }
+            } else {
+                entity = existingEntity;
+            }
+        } catch (MalformedURLException e) {
+            log.warning("Wikidata Plugin: MalformedURLException ..." + e.getMessage());
+            throw new RuntimeException("Could not find wikidata endpoint.", e);
+        } catch (IOException ioe) {
+            throw new WebApplicationException(new Throwable(ioe), Status.BAD_REQUEST);
+        } catch (JSONException je) {
+            throw new WebApplicationException(je);
+        } catch (Exception e) {
+            throw new WebApplicationException(new Throwable(e), Status.INTERNAL_SERVER_ERROR);
+        } finally {
+            return entity;
+        }
+    }
+
+    /**
+     *  This method loads all claims for a wikidata entity.
+     *
+     *  @param {id}              wikidata entity id
+     */
+
+    @GET
+    @Path("/check/claims/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Topic checkClaims(@PathParam("id") long topicId, @HeaderParam("Cookie") ClientState clientState) {
+
+        String json_result = "";
+        StringBuffer resultBody = new StringBuffer();
+        URL requestUri = null;
+        Topic wikidataItem = dms.getTopic(topicId, true);
+        String wikidataId = wikidataItem.getUri().replaceAll(WD_SEARCH_ENTITIY_DATA_URI_PREFIX, "");
+        DeepaMehtaTransaction tx = dms.beginTx();
+        try {
+            // 1) fixme: Authorize request
+            requestUri = new URL(WD_CHECK_ENTITY_CLAIMS_ENDPOINT + "&entity=" + wikidataId);
+            log.fine("Checking Claims of Wikidata entity" + requestUri.toString());
+            // 2) initiate request
+            HttpURLConnection connection = (HttpURLConnection) requestUri.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("User-Agent", "DeepaMehta "+DEEPAMEHTA_VERSION+" - "
+                    + "Wikidata Search " + WIKIDATA_TYPE_SEARCH_VERSION);
+            // 3) check the response
+            int httpStatusCode = connection.getResponseCode();
+            if (httpStatusCode != HttpURLConnection.HTTP_OK) {
+                throw new WebApplicationException(new Throwable("Error with HTTPConnection."),
+                        Status.INTERNAL_SERVER_ERROR);
+            }
+            // 4) read in the response
+            BufferedReader rd = new BufferedReader(new InputStreamReader(connection.getInputStream(), CHARSET));
+            for (String input; (input = rd.readLine()) != null;) {
+                resultBody.append(input);
+            }
+            rd.close();
+            // 5) process response
+            if (resultBody.toString().isEmpty()) {
+                throw new WebApplicationException(new RuntimeException("Wikidata was silent."),
+                        Status.NO_CONTENT);
+            } else {
+                json_result = resultBody.toString();
+                processWikidataClaims(json_result, wikidataItem, clientState);
+                log.info("Wikidata Claim Response is FINE");
+            }
+            tx.success();
+        } catch (MalformedURLException e) {
+            log.warning("Wikidata Plugin: MalformedURLException ..." + e.getMessage());
+            tx.failure();
+            throw new RuntimeException("Could not find wikidata endpoint.", e);
+        } catch (IOException ioe) {
+            tx.failure();
+            throw new WebApplicationException(new Throwable(ioe), Status.BAD_REQUEST);
+        } catch (Exception e) {
+            tx.failure();
+            throw new WebApplicationException(new Throwable(e), Status.INTERNAL_SERVER_ERROR);
+        } finally {
+            tx.finish();
+            return wikidataItem;
         }
     }
 
@@ -188,6 +337,7 @@ public class TypeSearchPlugin extends PluginActivator {
             log.info("Turned wikidata property \""+ property_entity.getUri() +"\" into DM Association Type!");
             tx.success();
         } catch (Error e) {
+            tx.failure();
             log.warning("OH: The Wikidata Plugin experienced an unforeseen error! "+ e.getMessage());
         } finally {
             tx.finish();
@@ -199,6 +349,7 @@ public class TypeSearchPlugin extends PluginActivator {
 
     /** --- Initialize the migrated soundsets ACL-Entries.  --- */
 
+    @Override
     public void init() {
         isInitialized = true;
         configureIfReady();
@@ -285,6 +436,154 @@ public class TypeSearchPlugin extends PluginActivator {
             log.warning("Wikidata Plugin: JSONException during processing a wikidata entity search response. "
                     + ex.getMessage());
         }
+    }
+
+    private Topic createWikidataSearchEntity(JSONObject entity_response, String lang, ClientState clientState) {
+        Topic entity = null;
+        DeepaMehtaTransaction tx = dms.beginTx();
+        try {
+            String id = entity_response.getString("id");
+            String type = entity_response.getString("type");
+            // Create new search entity composite
+            CompositeValueModel entity_composite = new CompositeValueModel();
+            // main label
+            if (entity_response.has("labels")) {
+                JSONObject labels = entity_response.getJSONObject("labels");
+                JSONObject languaged_label = labels.getJSONObject(lang);
+                String label = languaged_label.getString("value");
+                entity_composite.put(WD_SEARCH_ENTITY_LABEL_URI, label);
+            }
+            // main description
+            if (entity_response.has("descriptions")) {
+                JSONObject descriptions = entity_response.getJSONObject("descriptions");
+                JSONObject languaged_descr = descriptions.getJSONObject(lang);
+                String description = languaged_descr.getString("value");
+                entity_composite.put(WD_SEARCH_ENTITY_DESCR_URI, description);
+            }
+            // aliases
+            if (entity_response.has("aliases")) {
+                JSONObject aliases = entity_response.getJSONObject("aliases");
+                JSONArray languaged_aliases = aliases.getJSONArray(lang);
+                for (int a=0; a < languaged_aliases.length(); a++) {
+                    JSONObject alias_object = languaged_aliases.getJSONObject(a);
+                    String alias = alias_object.getString("value");
+                    entity_composite.add(WD_SEARCH_ENTITY_ALIAS_URI,
+                        new TopicModel(WD_SEARCH_ENTITY_ALIAS_URI, new SimpleValue(alias)));
+                }
+            }
+            // main sitelink
+            if (entity_response.has("sitelinks")) {
+                JSONObject sitelinks = entity_response.getJSONObject("sitelinks");
+                if (sitelinks.has(lang + "wiki")) {
+                    JSONObject sitelink = sitelinks.getJSONObject(lang + "wiki");
+                    entity_composite.put(DM_WEBBROWSER_URL, sitelink.getString("url"));
+                } else {
+                    log.warning("There is no sitelink for this item in this language/wiki: " + lang + "wiki");
+                }
+            }
+            entity_composite.put(WD_SEARCH_ENTITY_TYPE_URI, type);
+            TopicModel entity_model = new TopicModel(WD_SEARCH_ENTITIY_DATA_URI_PREFIX + id,
+                    WD_SEARCH_ENTITY_URI, entity_composite);
+            entity = dms.createTopic(entity_model, clientState);
+            log.info("Wikidata Create Search Entity ("+type+"): \"" + entity.getSimpleValue() +"\" - FINE!");
+            tx.success();
+        } catch (JSONException ex) {
+            log.warning("Wikidata Plugin: JSONException during processing a wikidata entity search response. "
+                    + ex.getMessage());
+            tx.failure();
+        } finally {
+            tx.finish();
+            return entity;
+        }
+    }
+
+    private void processWikidataClaims(String json_result, Topic wikidataItem, ClientState clientState) {
+        try {
+            JSONObject response = new JSONObject(json_result);
+            JSONArray result = response.getJSONArray("claims");
+            if (result.length() > 0) {
+                log.info("Wikidata Plugin has receveived " + result.length() + " claims");
+                for (int i=0; i < result.length(); i++) {
+                    // two new topics per claim
+                    Topic propertyEntity = null;
+                    Topic itemEntity = null;
+                    // build up property part of the claim
+                    JSONObject entity_response = result.getJSONObject(i);
+                    JSONObject mainsnak = entity_response.getJSONObject("mainsnak");
+                    String propertyId = mainsnak.getString("property");
+                    String claim_guid = entity_response.getString("id");
+                    propertyEntity = getOrCreateWikidataEntity(propertyId, clientState);
+                    // build up item part of the claim (if so)
+                    String itemId = "";
+                    String snakDataType = mainsnak.getString("datatype");
+                    JSONObject snakDataValue = mainsnak.getJSONObject("datavalue");
+                    // ..) switch for various (claimed/realted) value-types
+                    if (snakDataType.equals("wikibase-item")) {
+                        // log.info("Wikibase Item claimed via \"" + propertyEntity.getSimpleValue() + "\"");
+                        JSONObject snakDataValueValue = snakDataValue.getJSONObject("value");
+                        long numericId = snakDataValueValue.getLong("numeric-id");
+                        itemId = "Q" + numericId; // is this always of entity-type "item"? responses looks like.
+                        itemEntity = getOrCreateWikidataEntity(itemId, clientState);
+                    } else if (snakDataType.equals("commonsMedia")) {
+                        // do relate wikidata.commons_media
+                        log.info("Commons Media claimed via \"" + propertyEntity.getSimpleValue() + "\"");
+                    } else if (snakDataType.equals("globe-coordinate")) {
+                        // do relate wikidata.globe_coordinate
+                        log.info("Globe Coordinate claimed via \"" + propertyEntity.getSimpleValue() + "\"");
+                    } else if (snakDataType.equals("string")) {
+                        //
+                        log.info("Wikidata Text claimed via \"" + propertyEntity.getSimpleValue() + "\"="
+                                + snakDataValue);
+                    } else {
+                        log.warning("Value claimed as " + propertyEntity.getSimpleValue() + " is not of any known type "
+                                + "wikibase-item but \"" + snakDataType +"\" ("+snakDataValue+")");
+                    }
+                    //
+                    if (propertyEntity != null) {
+                        createWikidataClaimEdge(claim_guid, wikidataItem, propertyEntity, clientState);
+                        log.info("Created claim \"" + propertyEntity.getSimpleValue() +
+                                "\" for \"" + wikidataItem.getSimpleValue() + "\" - FINE");
+                        if (itemEntity != null) {
+                            createWikidataClaimEdge(claim_guid, itemEntity, propertyEntity, clientState);
+                            log.info("Created claim \"" + propertyEntity.getSimpleValue() +
+                                    "\" for \"" + itemEntity.getSimpleValue() + "\" - FINE");
+                        } else {
+                            log.warning("SKIPPED creating claim of type \""+snakDataType+"\" value for "
+                                    + "\""+propertyEntity.getSimpleValue()+"\"");
+                        }
+                    }
+                }
+            }
+        } catch (JSONException ex) {
+            log.warning("Wikidata Plugin: JSONException during processing a wikidata entity search response. "
+                    + ex.getMessage());
+        }
+    }
+
+    private Association createWikidataClaimEdge (String claim_guid, Topic one, Topic two ,ClientState clientState) {
+        DeepaMehtaTransaction tx = dms.beginTx();
+        Association claim = null;
+        try {
+            if (!associationExists(WD_ENTITY_CLAIM_EDGE, one, two)) {
+                claim = dms.createAssociation(new AssociationModel(WD_ENTITY_CLAIM_EDGE,
+                    new TopicRoleModel(one.getUri(), "dm4.core.default"),
+                    new TopicRoleModel(two.getUri(), "dm4.core.default")), clientState);
+                claim.setUri(claim_guid);
+                log.info("Created claim edge with GUID: " + claim.getUri());
+            }
+            tx.success();
+        } catch (Exception e) {
+            log.severe("FAILED creating \"Claim\" between \""+one.getSimpleValue()+"\" and \""+two.getSimpleValue());
+            tx.failure();
+        } finally {
+            tx.finish();
+            return claim;
+        }
+    }
+
+    private boolean associationExists(String edge_type, Topic item, Topic user) {
+        List<Association> results = dms.getAssociations(item.getId(), user.getId(), edge_type);
+        return (results.size() > 0) ? true : false;
     }
 
     private void assignToWikidataWorkspace(Topic topic) {

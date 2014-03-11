@@ -4,7 +4,7 @@
  * DeepaMehta 4 Webclient Wikidata JavaScript Plugin
  * @author Malte Reißig (<malte@mikromedia.de>)
  * @website https://github.com/mukil/dm4-wikidata
- * @version: 0.0.1
+ * @version 0.0.2-SNAPSHOT
  *
  */
 
@@ -15,7 +15,27 @@
         var language_menu
         var search_type_menu
 
-         // === Webclient Listeners ===
+        // === Webclient Listeners ===
+
+        dm4c.add_listener('topic_commands', function (topic) {
+            if (!dm4c.has_create_permission('org.deepamehta.wikidata.search_bucket')) {
+                return
+            }
+            var commands = []
+            if (topic.type_uri === 'org.deepamehta.wikidata.search_entity') {
+                // if type is item
+                var entity_type = topic.composite['org.deepamehta.wikidata.search_entity_type'].value
+                if (entity_type === "item") {
+                    commands.push({is_separator: true, context: 'context-menu'})
+                    commands.push({
+                        label: 'Check claims',
+                        handler: checkWikidataClaims,
+                        context: ['context-menu', 'detail-panel-show']
+                    })
+                }
+            }
+            return commands
+        })
 
         dm4c.add_listener("init", function() {
             dm4c.toolbar.searchmode_menu.add_item({label: "Wikidata Search", value: "wikidata-search"})
@@ -70,6 +90,7 @@
             if (searchmode == "wikidata-search") {
 
                 var search_value = $('input.wikidata-type-search').val()
+                    search_value = search_value.replace(" ", "+")
                     search_value = encodeURIComponent(search_value)
 
                 if (search_value !== "" && search_value !== " ") {
@@ -87,6 +108,42 @@
             }
 
         })
+
+        function checkWikidataClaims() {
+
+            var requestUri = '/wikidata/check/claims/' + dm4c.selected_object.id
+
+            var response_data_type = response_data_type || "json"
+            //
+            $.ajax({
+                type: "GET", url: requestUri,
+                dataType: response_data_type, processData: false,
+                async: true,
+                success: function(data, text_status, jq_xhr) {
+                    dm4c.do_select_topic(data.id, true)
+                },
+                error: function(jq_xhr, text_status, error_thrown) {
+                    $('#page-content').html('<div class="field-label wikidata-search started">'
+                        + 'An error occured: ' +error_thrown+ ' </div>')
+                    throw "RESTClientError: GET request failed (" + text_status + ": " + error_thrown + ")"
+                },
+                complete: function(jq_xhr, text_status) {
+                    var status = text_status
+                }
+            })
+
+            $('#page-content').html('<div class="field-label wikidata-search started">'
+                + 'Asking https://www.wikidata.org ... </div>')
+
+            // Notes:
+            // - page_renderer() selbst übernehmen, und simple und multi-renderer trotzdem ausführen (direkt aufrufen)
+            //   see webclient simple title_renderer:
+            //   "dm4c.get_simple_renderer("dm4.webclient.text_renderer").render_form(page_model, parent_element)"
+            // - see webclient migration to get name of all default renderer
+            // - defualt_text_renderer (assoc_def, wenn aggregation dann rendert dieser die combobox plus eingabefeld)
+
+        }
+
     })
 
 }(jQuery, dm4c))
