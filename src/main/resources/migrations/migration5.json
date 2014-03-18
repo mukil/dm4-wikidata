@@ -69,7 +69,7 @@
         {
             "value": "Wikidata Claim",
             "uri": "org.deepamehta.wikidata.claim_edge",
-            "data_type_uri": "dm4.core.text",
+            "data_type_uri": "dm4.core.composite",
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",

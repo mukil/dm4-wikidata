@@ -1,6 +1,7 @@
 package org.deepamehta.plugins.wikidata;
 
 import de.deepamehta.core.Association;
+import de.deepamehta.core.AssociationDefinition;
 import de.deepamehta.core.AssociationType;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.*;
@@ -10,6 +11,7 @@ import de.deepamehta.core.service.Directives;
 import de.deepamehta.core.service.PluginService;
 import de.deepamehta.core.service.annotation.ConsumesService;
 import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
+import de.deepamehta.core.util.JavaUtils;
 import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -74,8 +76,11 @@ public class TypeSearchPlugin extends PluginActivator {
     private final String WD_SEARCH_ENTITY_ALIAS_URI = "org.deepamehta.wikidata.search_entity_alias";
     private final String WD_SEARCH_ENTITIY_DATA_URI_PREFIX = "org.deepamehta.wikidata.entity_";
 
+    private final String WD_TEXT_TYPE_URI = "org.deepamehta.wikidata.text";
+    private final String WD_COMMONS_MEDIA_TYPE_URI = "org.deepamehta.wikidata.commons_media";
+    private final String WD_GLOBE_COORDINATE_TYPE_URI = "org.deepamehta.wikidata.globe_coordinate";
+
     private final String WD_ENTITY_CLAIM_EDGE = "org.deepamehta.wikidata.claim_edge";
-    private final String WD_ENTITY_CLAIM_SEARCH_EDGE = "org.deepamehta.wikidata.claim_search_filter_edge";
 
     // --- Wikidata Service URIs
 
@@ -502,11 +507,11 @@ public class TypeSearchPlugin extends PluginActivator {
             JSONObject response = new JSONObject(json_result);
             JSONArray result = response.getJSONArray("claims");
             if (result.length() > 0) {
-                log.info("Wikidata Plugin has receveived " + result.length() + " claims");
+                log.info("Wikidata Plugin is processing " + result.length() + " CLAIMS");
                 for (int i=0; i < result.length(); i++) {
                     // two new topics per claim
                     Topic propertyEntity = null;
-                    Topic itemEntity = null;
+                    Topic referencedItemEntity = null;
                     // build up property part of the claim
                     JSONObject entity_response = result.getJSONObject(i);
                     JSONObject mainsnak = entity_response.getJSONObject("mainsnak");
@@ -523,61 +528,82 @@ public class TypeSearchPlugin extends PluginActivator {
                         JSONObject snakDataValueValue = snakDataValue.getJSONObject("value");
                         long numericId = snakDataValueValue.getLong("numeric-id");
                         itemId = "Q" + numericId; // is this always of entity-type "item"? responses looks like.
-                        itemEntity = getOrCreateWikidataEntity(itemId, clientState);
+                        referencedItemEntity = getOrCreateWikidataEntity(itemId, clientState);
                     } else if (snakDataType.equals("commonsMedia")) {
                         // do relate wikidata.commons_media
-                        log.info("Commons Media claimed via \"" + propertyEntity.getSimpleValue() + "\"");
+                        log.info("Commons Media claimed via \"" + propertyEntity.getSimpleValue() + "\" - DEBUG:");
+                        log.warning(snakDataValue.toString());
                     } else if (snakDataType.equals("globe-coordinate")) {
                         // do relate wikidata.globe_coordinate
-                        log.info("Globe Coordinate claimed via \"" + propertyEntity.getSimpleValue() + "\"");
+                        log.info("Globe Coordinate claimed via \"" + propertyEntity.getSimpleValue() + "\" - DEBUG:");
+                        log.warning(snakDataValue.toString());
                     } else if (snakDataType.equals("string")) {
                         //
-                        log.info("Wikidata Text claimed via \"" + propertyEntity.getSimpleValue() + "\"="
-                                + snakDataValue);
+                        String value = snakDataValue.getString("value");
+                        referencedItemEntity = createWikidataTextValue(value, "en", clientState); // defused
                     } else {
                         log.warning("Value claimed as " + propertyEntity.getSimpleValue() + " is not of any known type "
                                 + "wikibase-item but \"" + snakDataType +"\" ("+snakDataValue+")");
                     }
                     //
-                    if (propertyEntity != null) {
-                        createWikidataClaimEdge(claim_guid, wikidataItem, propertyEntity, clientState);
-                        log.info("Created claim \"" + propertyEntity.getSimpleValue() +
+                    if (referencedItemEntity != null) {
+                        createWikidataClaimEdge(claim_guid, wikidataItem, referencedItemEntity,
+                            propertyEntity, clientState);
+                        log.info("Created claim \"" + referencedItemEntity.getSimpleValue() +
+                                " (property: " + propertyEntity.getSimpleValue() +
                                 "\" for \"" + wikidataItem.getSimpleValue() + "\" - FINE");
-                        if (itemEntity != null) {
-                            createWikidataClaimEdge(claim_guid, itemEntity, propertyEntity, clientState);
-                            log.info("Created claim \"" + propertyEntity.getSimpleValue() +
-                                    "\" for \"" + itemEntity.getSimpleValue() + "\" - FINE");
-                        } else {
-                            log.warning("SKIPPED creating claim of type \""+snakDataType+"\" value for "
-                                    + "\""+propertyEntity.getSimpleValue()+"\"");
-                        }
+                    } else {
+                        log.warning("SKIPPED creating claim of type \""+snakDataType+"\" value for "
+                                + "\""+propertyEntity.getSimpleValue()+"\"");
                     }
                 }
             }
         } catch (JSONException ex) {
-            log.warning("Wikidata Plugin: JSONException during processing a wikidata entity search response. "
+            log.warning("Wikidata Plugin: JSONException during processing a wikidata claim. "
                     + ex.getMessage());
         }
     }
 
-    private Association createWikidataClaimEdge (String claim_guid, Topic one, Topic two ,ClientState clientState) {
+    private Association createWikidataClaimEdge (String claim_guid, Topic one, Topic two,
+            Topic property, ClientState clientState) {
         DeepaMehtaTransaction tx = dms.beginTx();
         Association claim = null;
         try {
             if (!associationExists(WD_ENTITY_CLAIM_EDGE, one, two)) {
+                // 1) Create \"Wikidata Claim\"-Edge with GUID
                 claim = dms.createAssociation(new AssociationModel(WD_ENTITY_CLAIM_EDGE,
-                    new TopicRoleModel(one.getUri(), "dm4.core.default"),
-                    new TopicRoleModel(two.getUri(), "dm4.core.default")), clientState);
+                    new TopicRoleModel(one.getId(), "dm4.core.default"),
+                    new TopicRoleModel(two.getId(), "dm4.core.default")), clientState);
                 claim.setUri(claim_guid);
-                log.info("Created claim edge with GUID: " + claim.getUri());
+                log.info("Created \"Wikidata Claim\" with GUID: " + claim.getUri());
+                // 2) Assign wikidata property (=Wikidata Search Entity) to this claim-edge
+                claim.setCompositeValue(new CompositeValueModel().putRef(WD_SEARCH_ENTITY_URI,
+                        property.getUri()), clientState, null);
             }
             tx.success();
         } catch (Exception e) {
             log.severe("FAILED creating \"Claim\" between \""+one.getSimpleValue()+"\" and \""+two.getSimpleValue());
+            log.severe(e.getLocalizedMessage());
             tx.failure();
         } finally {
             tx.finish();
             return claim;
+        }
+    }
+
+    private Topic createWikidataTextValue(String value, String lang, ClientState clientState) {
+        Topic textValue = null;
+        DeepaMehtaTransaction tx = dms.beginTx();
+        try {
+            // textValue = dms.createTopic(new TopicModel(WD_TEXT_TYPE_URI, new SimpleValue(value)), clientState);
+            log.info("(Virtually) Created \"Wikidata Text\" - \"" + value +"\" - OK!");
+            tx.success();
+        } catch (Exception ex) {
+            log.warning("Wikidata Plugin: Exception during creating a wikidata value topic: " + ex.getMessage());
+            tx.failure();
+        } finally {
+            tx.finish();
+            return textValue;
         }
     }
 

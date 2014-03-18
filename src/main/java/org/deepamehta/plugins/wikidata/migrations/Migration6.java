@@ -20,19 +20,33 @@ public class Migration6 extends Migration {
 
     private Logger log = Logger.getLogger(getClass().getName());
 
-    private final String WS_WIKIDATA_URI = "org.deepamehta.workspaces.wikidata";
+    private final static String WS_WIKIDATA_URI = "org.deepamehta.workspaces.wikidata";
+
+    private final static String WD_SEARCH_ENTITY = "org.deepamehta.wikidata.search_entity";
+
+    private final static String WD_CLAIM_EDGE_TYPE_URI = "org.deepamehta.wikidata.claim_edge";
+
+    private final static String WD_TEXT_TYPE_URI = "org.deepamehta.wikidata.text";
+    private final static String WD_COMMONS_MEDIA_TYPE_URI = "org.deepamehta.wikidata.commons_media";
+    private final static String WD_GLOBE_COORDINATE_TYPE_URI = "org.deepamehta.wikidata.globe_coordinate";
 
     @Override
     public void run() {
 
-        TopicType coordinate = dms.getTopicType("org.deepamehta.wikidata.globe_coordinate");
-        assignWorkspace(coordinate);
-        TopicType commons_media = dms.getTopicType("org.deepamehta.wikidata.commons_media");
-        assignWorkspace(commons_media);
-        TopicType text = dms.getTopicType("org.deepamehta.wikidata.text");
-        assignWorkspace(text);
-        AssociationType claim = dms.getAssociationType("org.deepamehta.wikidata.claim_edge");
+        // 1) Assign all new wikidata types to the \"Wikidata\"-Workspace
+        AssociationType claim = dms.getAssociationType(WD_CLAIM_EDGE_TYPE_URI);
         assignWorkspace(claim);
+        TopicType coordinate = dms.getTopicType(WD_GLOBE_COORDINATE_TYPE_URI);
+        assignWorkspace(coordinate);
+        TopicType commons_media = dms.getTopicType(WD_COMMONS_MEDIA_TYPE_URI);
+        assignWorkspace(commons_media);
+        TopicType text = dms.getTopicType(WD_TEXT_TYPE_URI);
+        assignWorkspace(text);
+        // 2) Make \"Wikidata Search Entity\" (type=property) part of each \"Wikidata Claim\"-Edge
+        TopicType searchEntity = dms.getTopicType(WD_SEARCH_ENTITY);
+        claim.addAssocDef(new AssociationDefinitionModel("dm4.core.aggregation_def",
+                claim.getUri(), searchEntity.getUri(), "dm4.core.one", "dm4.core.one"));
+
 
     }
 
