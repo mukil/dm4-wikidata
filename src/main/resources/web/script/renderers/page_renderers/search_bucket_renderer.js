@@ -73,6 +73,10 @@
                 $('#page-content .wikidata-search-list').append($list_item)
             }
 
+            render('<br/><br/><a style="border: 0px;" target="_blank" href="https://www.wikidata.org">'
+                + '<img title="Search results powered by www.wikidata.org" '
+                + 'src="/org.deepamehta.wikidata-search/images/Wikidata-logo-en-135px.png" /></a>')
+
             function render(content_element) {
                 $('#page-content').append(content_element)
             }

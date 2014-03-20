@@ -1,18 +1,16 @@
 package org.deepamehta.plugins.wikidata;
 
 import de.deepamehta.core.Association;
-import de.deepamehta.core.AssociationDefinition;
 import de.deepamehta.core.AssociationType;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.*;
 import de.deepamehta.core.osgi.PluginActivator;
 import de.deepamehta.core.service.ClientState;
-import de.deepamehta.core.service.Directives;
 import de.deepamehta.core.service.PluginService;
 import de.deepamehta.core.service.annotation.ConsumesService;
 import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
-import de.deepamehta.core.util.JavaUtils;
 import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -21,15 +19,20 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.logging.Logger;
+
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response.Status;
+
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
+
+
 /**
- * A very basic plugin for searching and turning wikidata-properties into association-types.
+ * A very basic plugin to search and explore wikidata.
+ * Additionally this plugin allows to turn wikidata-properties into DeepaMehta 4 AssociationTypes.
  *
  * @author Malte Reißig (<malte@mikromedia.de>)
  * @website https://github.com/mukil/dm4-wikidata
@@ -44,8 +47,8 @@ public class TypeSearchPlugin extends PluginActivator {
 
     private Logger log = Logger.getLogger(getClass().getName());
 
-    private final String DEEPAMEHTA_VERSION = "DeepaMehta 4.2-SNAPSHOT";
-    private final String WIKIDATA_TYPE_SEARCH_VERSION = "0.0.1-SNAPSHOT";
+    private final String DEEPAMEHTA_VERSION = "DeepaMehta 4.2";
+    private final String WIKIDATA_TYPE_SEARCH_VERSION = "0.0.2-SNAPSHOT";
     private final String CHARSET = "UTF-8";
 
     // --- DeepaMehta 4 URIs
@@ -96,13 +99,12 @@ public class TypeSearchPlugin extends PluginActivator {
     // --- Instance Variables
 
     private boolean isInitialized = false;
-
     private AccessControlService acService = null;
 
 
 
     /**
-     *  This method searches a wikidata a \"Property\" by simple text-query:
+     *  This method searches all wikidata entities by text and the given language code.
      *
      *  @param {entity}             entity-type (either "item" or "property")
      *  @param {query}              name of wikidata property in search
@@ -175,7 +177,7 @@ public class TypeSearchPlugin extends PluginActivator {
     }
 
     /**
-     *  This method gets (or creates) a wikidata a \"Entity\" by its ID.
+     *  This method gets (or creates) a \"Wikidata Search Entity\" (in DeepaMehta 4) by its ID (wikidata).
      *
      *  @param {entityId}           wikidataId
      */
@@ -238,7 +240,7 @@ public class TypeSearchPlugin extends PluginActivator {
         } catch (IOException ioe) {
             throw new WebApplicationException(new Throwable(ioe), Status.BAD_REQUEST);
         } catch (JSONException je) {
-            throw new WebApplicationException(je);
+            throw new WebApplicationException(new Throwable(je), Status.INTERNAL_SERVER_ERROR);
         } catch (Exception e) {
             throw new WebApplicationException(new Throwable(e), Status.INTERNAL_SERVER_ERROR);
         } finally {
@@ -247,7 +249,7 @@ public class TypeSearchPlugin extends PluginActivator {
     }
 
     /**
-     *  This method loads all claims for a wikidata entity.
+     *  This method loads all claims for a wikidata entity into DeepaMehta 4.
      *
      *  @param {id}              wikidata entity id
      */
@@ -311,9 +313,9 @@ public class TypeSearchPlugin extends PluginActivator {
     }
 
     /**
-     *  This method creates a DeepaMehta Association Type from a wikidata \"Property\"-Entity.
+     *  This method creates a DeepaMehta Association Type given a \"Wikidata Search Entity\" (of type=property).
      *
-     *  @param {query}      name of wikidata property in search
+     *  @param {id}      id of wikidata search entity (type=property)
      */
 
     @GET
@@ -352,47 +354,11 @@ public class TypeSearchPlugin extends PluginActivator {
 
 
 
-    /** --- Initialize the migrated soundsets ACL-Entries.  --- */
+    // --
+    // ---  Wikidata Search (Application Specific) Private Methods
+    // --
 
-    @Override
-    public void init() {
-        isInitialized = true;
-        configureIfReady();
-    }
 
-    private void configureIfReady() {
-        if (isInitialized) {
-            checkACLsOfMigration();
-        }
-    }
-
-    /** --- Implementing PluginService Interfaces to consume AccessControlService --- */
-
-    @Override
-    @ConsumesService({
-        "de.deepamehta.plugins.accesscontrol.service.AccessControlService"
-    })
-    public void serviceArrived(PluginService service) {
-        if (service instanceof AccessControlService) {
-            acService = (AccessControlService) service;
-        }
-    }
-
-    @Override
-    @ConsumesService({
-        "de.deepamehta.plugins.accesscontrol.service.AccessControlService"
-    })
-    public void serviceGone(PluginService service) {
-        if (service == acService) {
-            acService = null;
-        }
-    }
-
-    /** --- Code running once, after plugin initialization. --- */
-
-    private void checkACLsOfMigration() {
-        // todo:
-    }
 
     private void processWikidataEntitySearch(String json_result, CompositeValueModel search_bucket,
             String type, String lang) {
@@ -492,9 +458,8 @@ public class TypeSearchPlugin extends PluginActivator {
             entity = dms.createTopic(entity_model, clientState);
             log.info("Wikidata Create Search Entity ("+type+"): \"" + entity.getSimpleValue() +"\" - FINE!");
             tx.success();
-        } catch (JSONException ex) {
-            log.warning("Wikidata Plugin: JSONException during processing a wikidata entity search response. "
-                    + ex.getMessage());
+        } catch (Exception ex) {
+            log.warning("FAILED to create a \"Wikidata Search Entity\":" + ex.getMessage());
             tx.failure();
         } finally {
             tx.finish();
@@ -559,8 +524,7 @@ public class TypeSearchPlugin extends PluginActivator {
                 }
             }
         } catch (JSONException ex) {
-            log.warning("Wikidata Plugin: JSONException during processing a wikidata claim. "
-                    + ex.getMessage());
+            log.warning("JSONException during processing a wikidata claim. " + ex.getMessage());
         }
     }
 
@@ -582,9 +546,9 @@ public class TypeSearchPlugin extends PluginActivator {
             }
             tx.success();
         } catch (Exception e) {
-            log.severe("FAILED creating \"Claim\" between \""+one.getSimpleValue()+"\" and \""+two.getSimpleValue());
-            log.severe(e.getLocalizedMessage());
+            log.severe("FAILED to create a \"Claim\" between \""+one.getSimpleValue()+"\" and \""+two.getSimpleValue());
             tx.failure();
+            throw new RuntimeException(e);
         } finally {
             tx.finish();
             return claim;
@@ -599,13 +563,21 @@ public class TypeSearchPlugin extends PluginActivator {
             log.info("(Virtually) Created \"Wikidata Text\" - \"" + value +"\" - OK!");
             tx.success();
         } catch (Exception ex) {
-            log.warning("Wikidata Plugin: Exception during creating a wikidata value topic: " + ex.getMessage());
+            log.warning("FAILURE during creating a wikidata value topic: " + ex.getMessage());
             tx.failure();
+            throw new RuntimeException(ex);
         } finally {
             tx.finish();
             return textValue;
         }
     }
+
+
+
+    // --
+    // --- DeepaMehta 4 Plugin Related Private Methods
+    // --
+
 
     private boolean associationExists(String edge_type, Topic item, Topic user) {
         List<Association> results = dms.getAssociations(item.getId(), user.getId(), edge_type);
@@ -619,6 +591,48 @@ public class TypeSearchPlugin extends PluginActivator {
             new TopicRoleModel(topic.getId(), "dm4.core.parent"),
             new TopicRoleModel(defaultWorkspace.getId(), "dm4.core.child")
         ), null);
+    }
+
+    /** --- Initialize the migrated soundsets ACL-Entries.  --- */
+
+    @Override
+    public void init() {
+        isInitialized = true;
+        configureIfReady();
+    }
+
+    private void configureIfReady() {
+        if (isInitialized) {
+            checkACLsOfMigration();
+        }
+    }
+
+    /** --- Implementing PluginService Interfaces to consume AccessControlService --- */
+
+    @Override
+    @ConsumesService({
+        "de.deepamehta.plugins.accesscontrol.service.AccessControlService"
+    })
+    public void serviceArrived(PluginService service) {
+        if (service instanceof AccessControlService) {
+            acService = (AccessControlService) service;
+        }
+    }
+
+    @Override
+    @ConsumesService({
+        "de.deepamehta.plugins.accesscontrol.service.AccessControlService"
+    })
+    public void serviceGone(PluginService service) {
+        if (service == acService) {
+            acService = null;
+        }
+    }
+
+    /** --- Code running once, after plugin initialization. --- */
+
+    private void checkACLsOfMigration() {
+        // todo:
     }
 
 }

@@ -169,7 +169,9 @@
                         "dm4.webclient.show_in_create_menu": false,
                         "dm4.webclient.searchable_as_unit": false,
                         "dm4.webclient.input_field_rows": 1,
-                        "dm4.webclient.locked": true
+                        "dm4.webclient.locked": true,
+                        "dm4.webclient.color": "#990000",
+                        "dm4.webclient.icon": "/org.deepamehta.wikidata-search/images/rect3228.png"
                     }
                 }
             ]
@@ -205,7 +207,8 @@
                         "dm4.webclient.searchable_as_unit": false,
                         "dm4.webclient.input_field_rows": 4,
                         "dm4.webclient.locked": true,
-                        "dm4.webclient.page_renderer_uri" : "org.deepamehta.wikidata.search_bucket_renderer"
+                        "dm4.webclient.page_renderer_uri" : "org.deepamehta.wikidata.search_bucket_renderer",
+                        "dm4.webclient.icon": "/org.deepamehta.wikidata-search/images/list_nested_red.png"
                     }
                 }
             ],
