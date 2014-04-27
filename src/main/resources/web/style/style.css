@@ -15,14 +15,32 @@
     margin-top: 20px;
 }
 
+.wikidata-search-spinner {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    position: relative; top: 45%;
+    text-align: center;
+}
+
 li.wikidata-item {
-    padding-left: 20px;
     position: relative;
 }
 
 li.wikidata-item .entity-name {
     cursor: pointer;
     color: #006699;
+    display: inline-block;
+}
+
+li.wikidata-item .entity-icon {
+    display: inline-block;
+}
+
+li.wikidata-item .entity-icon img {
+    cursor: pointer;
+    vertical-align: bottom;
+    margin-right: 5px;
 }
 
 li.wikidata-item .entity-name:hover {
@@ -32,7 +50,7 @@ li.wikidata-item .entity-name:hover {
 li.wikidata-item .entity-description {
     color: #484848;
     font-size: 0.8em;
-    padding-left: 20px;
+    padding-left: 38px;
     padding-right: 30px;
 }
 

@@ -16,6 +16,21 @@
                     }
                 }
             ]
+        },
+        {
+            "value": "Wikidata Search Entity Ordinal Number",
+            "uri": "org.deepamehta.wikidata.search_ordinal_nr",
+            "data_type_uri": "dm4.core.number",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "composite": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.locked": true
+                    }
+                }
+            ]
         }
     ]
 }

@@ -28,8 +28,8 @@
                 if (entity_type === "item") {
                     commands.push({is_separator: true, context: 'context-menu'})
                     commands.push({
-                        label: 'Check claims',
-                        handler: checkWikidataClaims,
+                        label: 'Load claims',
+                        handler: loadRelatedItems,
                         context: ['context-menu', 'detail-panel-show']
                     })
                 }
@@ -109,7 +109,7 @@
 
         })
 
-        function checkWikidataClaims() {
+        function loadRelatedItems() {
 
             var requestUri = '/wikidata/check/claims/' + dm4c.selected_object.id
 
@@ -135,6 +135,9 @@
             $('#page-content').html('<div class="field-label wikidata-search started">'
                 + 'Asking https://www.wikidata.org ... </div>')
 
+            $('#page-content').append('<div class="field-item wikidata-search-spinner">'
+                + '<img src="/org.deepamehta.wikidata-search/images/ajax-loader.gif" '
+                    + 'title="Processing the wikidata search response"></div>')
             // Notes:
             // - page_renderer() selbst übernehmen, und simple und multi-renderer trotzdem ausführen (direkt aufrufen)
             //   see webclient simple title_renderer:

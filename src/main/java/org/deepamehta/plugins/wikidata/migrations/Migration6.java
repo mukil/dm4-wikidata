@@ -42,11 +42,18 @@ public class Migration6 extends Migration {
         assignWorkspace(commons_media);
         TopicType text = dms.getTopicType(WD_TEXT_TYPE_URI);
         assignWorkspace(text);
+        log.info("1) Assigned \"Wikidata Text\", \"Wikidata Commons Media\", \"Wikidata Globe Coordinate\" "
+                + "to \"Wikidata\"-Workspace");
         // 2) Make \"Wikidata Search Entity\" (type=property) part of each \"Wikidata Claim\"-Edge
         TopicType searchEntity = dms.getTopicType(WD_SEARCH_ENTITY);
         claim.addAssocDef(new AssociationDefinitionModel("dm4.core.aggregation_def",
                 claim.getUri(), searchEntity.getUri(), "dm4.core.one", "dm4.core.one"));
-
+        log.info("2) Assigned \"Wikidata Search Entity\" to \"Wikidata Claim\"");
+        // 3) Add "Ordinal Number" to "Search Entity"
+        TopicType ordinalNr = dms.getTopicType("org.deepamehta.wikidata.search_ordinal_nr");
+        searchEntity.addAssocDef(new AssociationDefinitionModel("dm4.core.composition_def",
+                searchEntity.getUri(), ordinalNr.getUri(), "dm4.core.one", "dm4.core.one"));
+        log.info("3) Assigned \"Search Entity Ordinal Nr\" to \"Search Entity\"");
 
     }
 

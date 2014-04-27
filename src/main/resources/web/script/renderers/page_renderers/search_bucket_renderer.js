@@ -25,10 +25,14 @@
                 render('<div class="wikidata-query-info">Zero results</div>')
                 return // fixme:
             }
+            // sort
+            search_entities.sort(result_order_sort)
+            // render
             for (var i=0; i < search_entities.length; i++) {
                 //
                 var result_item = search_entities[i]
                 var entity_id = result_item.id
+                var entity_uri = result_item.uri
                 var entity_name = result_item.composite['org.deepamehta.wikidata.search_entity_label'].value
                 var entity_description = ""
                 if (result_item.composite.hasOwnProperty('org.deepamehta.wikidata.search_entity_description')) {
@@ -45,30 +49,37 @@
                 var item_type = result_item.composite['org.deepamehta.wikidata.search_entity_type'].value
                 var $list_item = $('<li class="wikidata-item">')
                 var $item_name = ""
+                var $item_icon = ""
                 if (item_type === "item") {
+                    // set up result-item element
                     $item_name = $('<div class="item entity-name" '
-                        + 'title="Reveal search entity" id="name-'+ entity_id +'">').text(entity_name)
-                    $item_name.click(function(e) { dm4c.do_reveal_related_topic(e.target.id.substr(5), "show") })
-                    /** var $item_add = $('<a class="create-type" id="'+ entity_id +'" title="Create Wikidata Item"'
-                        + ' href="#turn">').text("+")
-                        $item_add.click(function(e) {
-                            dm4c.restc.request("GET", "/wikidata/item/turn/" + e.target.id)
-                        }) **/
+                        + 'title="Show Wikidata Item Entity: ' +entity_uri+ '" id="name-'+ entity_id +'">').append(entity_name)
+                    $item_icon = $('<div class="item entity-icon" title="Reveal '
+                        + 'Wikidata Item Entity: ' +entity_uri+ '"><img id="icon-'+ entity_id +'" src="/org.deepamehta.wikidata-search/images/rect3228.png" />'
+                        + '</div>')
+                    // click handler 1
+                    $item_name.click(function(e) {
+                        dm4c.do_reveal_related_topic(e.target.id.substr(5), "show")
+                    })
+                    // click handler 2
+                    $item_icon.click(function(e) {
+                        var item_id = e.target.id
+                        dm4c.do_reveal_related_topic(item_id.substr(5), "none")
+                    })
                 } else if (item_type === "property") {
                     $item_name = $('<div class="property entity-name" '
-                        + '"title="Reveal search entity" id="name-'+ entity_id +'">').text(entity_name)
-                    $item_name.click(function(e) { dm4c.do_reveal_related_topic(e.target.id.substr(5), "show") })
+                        + '"title="Show Wikidata Property Entity" id="name-'+ entity_id +'">').text(entity_name)
+                    $item_name.click(function(e) {dm4c.do_reveal_related_topic(e.target.id.substr(5), "show")})
                     var $item_add = $('<a class="create-type" id="'+ entity_id +'" title="Turn property into '
                         + 'new Association Type" href="#turn">').text("+")
                         $item_add.click(function(e) {
                             dm4c.restc.request("GET", "/wikidata/property/turn/" + e.target.id)
                         })
-
                 }
                 var $item_descr = $('<div class="entity-description">').text(entity_description.value)
-                    if (alias_names != "") $item_descr.append('<br/><b>Aliases</b>: '+ alias_names)
+                    if (alias_names != "") $item_descr.append('<br/>Aliases: '+ alias_names)
 
-                $list_item.append($item_add).append($item_name).append($item_descr)
+                $list_item.append($item_add).append($item_icon).append($item_name).append($item_descr)
 
                 $('#page-content .wikidata-search-list').append($list_item)
             }
@@ -85,6 +96,25 @@
                 $('#page-content').empty()
                 $('#page-content').removeClass('wikidata-page')
             }
+
+            /** sorting asc by item.composite["org.deepamehta.wikidata.search_ordinal_nr"].value */
+            function result_order_sort (a, b) {
+                var scoreA = 0
+                var scoreB = 0
+                if (a.composite.hasOwnProperty("org.deepamehta.wikidata.search_ordinal_nr")) {
+                    scoreA = a.composite["org.deepamehta.wikidata.search_ordinal_nr"].value
+                }
+                if (b.composite.hasOwnProperty("org.deepamehta.wikidata.search_ordinal_nr")) {
+                    scoreB = b.composite["org.deepamehta.wikidata.search_ordinal_nr"].value
+                }
+
+                if (scoreA < scoreB) // sort string descending
+                return -1
+                if (scoreA > scoreB)
+                return 1
+                return 0 //default return value (no sorting)
+            }
+
 
         },
 

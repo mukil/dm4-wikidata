@@ -27,12 +27,13 @@ import javax.ws.rs.core.Response.Status;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.deepamehta.plugins.wikidata.service.WikidataSearchService;
 
 
 
 /**
  * A very basic plugin to search and explore wikidata.
- * Additionally this plugin allows to turn wikidata-properties into DeepaMehta 4 AssociationTypes.
+ * Allows to turn a \"Wikidata Search Result Entity\" (of type=property) into DeepaMehta 4 AssociationTypes.
  *
  * @author Malte Reißig (<malte@mikromedia.de>)
  * @website https://github.com/mukil/dm4-wikidata
@@ -43,7 +44,7 @@ import org.codehaus.jettison.json.JSONObject;
 @Path("/wikidata")
 @Consumes("application/json")
 @Produces("application/json")
-public class TypeSearchPlugin extends PluginActivator {
+public class WikidataSearchPlugin extends PluginActivator implements WikidataSearchService {
 
     private Logger log = Logger.getLogger(getClass().getName());
 
@@ -53,11 +54,6 @@ public class TypeSearchPlugin extends PluginActivator {
 
     // --- DeepaMehta 4 URIs
 
-    private final String DEFAULT_ROLE_TYPE_URI = "dm4.core.default";
-    private final String CHILD_ROLE_TYPE_URI = "dm4.core.child";
-    private final String PARENT_ROLE_TYPE_URI = "dm4.core.parent";
-    private final String AGGREGATION_TYPE_URI = "dm4.core.aggregation";
-    private final String COMPOSITION_TYPE_URI = "dm4.core.composition";
     private final String DM_WEBBROWSER_URL = "dm4.webbrowser.url";
 
     // --- Wikidata DeepaMehta URIs
@@ -75,13 +71,14 @@ public class TypeSearchPlugin extends PluginActivator {
     private final String WD_SEARCH_ENTITY_URI = "org.deepamehta.wikidata.search_entity";
     private final String WD_SEARCH_ENTITY_LABEL_URI = "org.deepamehta.wikidata.search_entity_label";
     private final String WD_SEARCH_ENTITY_TYPE_URI = "org.deepamehta.wikidata.search_entity_type";
+    private final String WD_SEARCH_ENTITY_ORDINAL_NR = "org.deepamehta.wikidata.search_ordinal_nr";
     private final String WD_SEARCH_ENTITY_DESCR_URI = "org.deepamehta.wikidata.search_entity_description";
     private final String WD_SEARCH_ENTITY_ALIAS_URI = "org.deepamehta.wikidata.search_entity_alias";
     private final String WD_SEARCH_ENTITIY_DATA_URI_PREFIX = "org.deepamehta.wikidata.entity_";
 
-    private final String WD_TEXT_TYPE_URI = "org.deepamehta.wikidata.text";
-    private final String WD_COMMONS_MEDIA_TYPE_URI = "org.deepamehta.wikidata.commons_media";
-    private final String WD_GLOBE_COORDINATE_TYPE_URI = "org.deepamehta.wikidata.globe_coordinate";
+    // private final String WD_TEXT_TYPE_URI = "org.deepamehta.wikidata.text";
+    // private final String WD_COMMONS_MEDIA_TYPE_URI = "org.deepamehta.wikidata.commons_media";
+    // private final String WD_GLOBE_COORDINATE_TYPE_URI = "org.deepamehta.wikidata.globe_coordinate";
 
     private final String WD_ENTITY_CLAIM_EDGE = "org.deepamehta.wikidata.claim_edge";
 
@@ -93,10 +90,12 @@ public class TypeSearchPlugin extends PluginActivator {
             "http://www.wikidata.org/w/api.php?action=wbgetclaims&ungroupedlist=1&format=json";
     private final String WD_GET_ENTITY_ENDPOINT = "http://www.wikidata.org/w/api.php?action=wbgetentities"
             + "&props=info%7Csitelinks%2Furls%7Caliases%7Clabels%7Cdescriptions&dir=ascending&format=json";
-    private final String WD_SEARCH_ENTITY_TYPE_PROPERTY = "property";
-    private final String WD_SEARCH_ENTITY_TYPE_ITEM = "item";
+    // private final String WD_SEARCH_ENTITY_TYPE_PROPERTY = "property";
+    // private final String WD_SEARCH_ENTITY_TYPE_ITEM = "item";
 
     // --- Instance Variables
+
+    private final String WIKIDATA_ENTITY_URL_PREFIX = "//www.wikidata.org/wiki/";
 
     private boolean isInitialized = false;
     private AccessControlService acService = null;
@@ -358,15 +357,13 @@ public class TypeSearchPlugin extends PluginActivator {
     // ---  Wikidata Search (Application Specific) Private Methods
     // --
 
-
-
     private void processWikidataEntitySearch(String json_result, CompositeValueModel search_bucket,
             String type, String lang) {
         try {
             JSONObject response = new JSONObject(json_result);
             JSONArray result = response.getJSONArray("search");
             if (result.length() > 0) {
-                for (int i=0; i < result.length(); i++) {
+                for (int i = 0; i < result.length(); i++) {
                     JSONObject entity_response = result.getJSONObject(i);
                     // Check if entity already exists
                     String id = entity_response.getString("id");
@@ -392,6 +389,7 @@ public class TypeSearchPlugin extends PluginActivator {
                                     new TopicModel(WD_SEARCH_ENTITY_ALIAS_URI, new SimpleValue(alias)));
                             }
                         }
+                        entity_composite.put(WD_SEARCH_ENTITY_ORDINAL_NR, i);
                         entity_composite.put(WD_SEARCH_ENTITY_TYPE_URI, type);
                         TopicModel entity_model = new TopicModel(WD_SEARCH_ENTITIY_DATA_URI_PREFIX + id,
                                 WD_SEARCH_ENTITY_URI, entity_composite);
@@ -442,8 +440,10 @@ public class TypeSearchPlugin extends PluginActivator {
                         new TopicModel(WD_SEARCH_ENTITY_ALIAS_URI, new SimpleValue(alias)));
                 }
             }
-            // main sitelink
-            if (entity_response.has("sitelinks")) {
+            // set wikidata url
+            entity_composite.put(DM_WEBBROWSER_URL, WIKIDATA_ENTITY_URL_PREFIX + id);
+            // ### sitelinks
+            /** if (entity_response.has("sitelinks")) {
                 JSONObject sitelinks = entity_response.getJSONObject("sitelinks");
                 if (sitelinks.has(lang + "wiki")) {
                     JSONObject sitelink = sitelinks.getJSONObject(lang + "wiki");
@@ -451,7 +451,7 @@ public class TypeSearchPlugin extends PluginActivator {
                 } else {
                     log.warning("There is no sitelink for this item in this language/wiki: " + lang + "wiki");
                 }
-            }
+            } **/
             entity_composite.put(WD_SEARCH_ENTITY_TYPE_URI, type);
             TopicModel entity_model = new TopicModel(WD_SEARCH_ENTITIY_DATA_URI_PREFIX + id,
                     WD_SEARCH_ENTITY_URI, entity_composite);
@@ -577,7 +577,6 @@ public class TypeSearchPlugin extends PluginActivator {
     // --
     // --- DeepaMehta 4 Plugin Related Private Methods
     // --
-
 
     private boolean associationExists(String edge_type, Topic item, Topic user) {
         List<Association> results = dms.getAssociations(item.getId(), user.getId(), edge_type);

@@ -23,32 +23,21 @@ public class Migration4 extends Migration {
     private final static String WD_SEARCH_ENTITY_TYPE = "org.deepamehta.wikidata.search_entity_type";
     private final static String WD_SEARCH_ENTITY = "org.deepamehta.wikidata.search_entity";
 
-    private final String WS_WIKIDATA_URI = "org.deepamehta.workspaces.wikidata";
-
     @Override
     public void run() {
 
-        // 1) assign "admin" username to \"Wikidata\"-Workspace
+        // 1) fetch my two topic-types
         TopicType searchEntity = dms.getTopicType(WD_SEARCH_ENTITY);
         TopicType searchEntityType = dms.getTopicType(WD_SEARCH_ENTITY_TYPE);
+        // 2) relate my new topic-type to the existing one
         searchEntity.addAssocDef(new AssociationDefinitionModel("dm4.core.composition_def",
                 searchEntity.getUri(), searchEntityType.getUri(), "dm4.core.one", "dm4.core.one"));
         log.info("1) Assigned \"Search Entity Type\" to \"Search Entity\"");
         // "dm4.webclient.page_renderer_uri" : "org.deepamehta.wikidata.search_entity_renderer"
         // log.info("2) Assigned new search entity renderer to \"Search Entity\" Topic Type");
-        // 3) remove "org.deepamehta.wikidata.language" from WD_SEARCH_ENTITY
-        searchEntity.removeAssocDef("org.deepamehta.wikidata.language");
+        // ### Do so when dm4-core is fixed: remove assocDef "org.deepamehta.wikidata.language" from WD_SEARCH_ENTITY
+        // searchEntity.removeAssocDef("org.deepamehta.wikidata.language");
 
-    }
-
-    // === Workspace ===
-
-    private void assignWorkspace(Topic topic) {
-        Topic defaultWorkspace = dms.getTopic("uri", new SimpleValue(WS_WIKIDATA_URI), false);
-        dms.createAssociation(new AssociationModel("dm4.core.aggregation",
-            new TopicRoleModel(topic.getId(), "dm4.core.parent"),
-            new TopicRoleModel(defaultWorkspace.getId(), "dm4.core.child")
-        ), null);
     }
 
 }
