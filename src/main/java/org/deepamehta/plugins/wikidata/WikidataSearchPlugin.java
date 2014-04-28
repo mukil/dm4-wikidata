@@ -265,7 +265,8 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         String wikidataId = wikidataItem.getUri().replaceAll(WD_SEARCH_ENTITIY_DATA_URI_PREFIX, "");
         DeepaMehtaTransaction tx = dms.beginTx();
         try {
-            // 1) fixme: Authorize request
+            // 1) ### Authorize request
+            // 2) ### be explicit and add "&rank=normal" to wbgetclaims-call
             requestUri = new URL(WD_CHECK_ENTITY_CLAIMS_ENDPOINT + "&entity=" + wikidataId);
             log.fine("Checking Claims of Wikidata entity" + requestUri.toString());
             // 2) initiate request
