@@ -76,7 +76,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     private final String WD_SEARCH_ENTITY_ALIAS_URI = "org.deepamehta.wikidata.search_entity_alias";
     private final String WD_SEARCH_ENTITIY_DATA_URI_PREFIX = "org.deepamehta.wikidata.entity_";
 
-    // private final String WD_TEXT_TYPE_URI = "org.deepamehta.wikidata.text";
+    private final String WD_TEXT_TYPE_URI = "org.deepamehta.wikidata.text";
     // private final String WD_COMMONS_MEDIA_TYPE_URI = "org.deepamehta.wikidata.commons_media";
     // private final String WD_GLOBE_COORDINATE_TYPE_URI = "org.deepamehta.wikidata.globe_coordinate";
 
@@ -197,7 +197,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             if (existingEntity == null) {
                 // 1) fixme: Authorize request
                 // &sites=dewiki&&languages=de
-                requestUri = new URL(WD_GET_ENTITY_ENDPOINT + "&ids="+ entityId + "&languages=" + language_code); // &ids=Q5
+                requestUri = new URL(WD_GET_ENTITY_ENDPOINT + "&ids="+ entityId + "&languages=" + language_code);
                 log.fine("Requesting Wikidata Entity " + requestUri.toString());
                 // 2) initiate request
                 HttpURLConnection connection = (HttpURLConnection) requestUri.openConnection();
@@ -477,7 +477,8 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         }
     }
 
-    private void processWikidataClaims(String json_result, Topic wikidataItem, String language_code, ClientState clientState) {
+    private void processWikidataClaims(String json_result, Topic wikidataItem, String language_code,
+            ClientState clientState) {
         try {
             JSONObject response = new JSONObject(json_result);
             JSONArray result = response.getJSONArray("claims");
@@ -507,27 +508,28 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                         referencedItemEntity = getOrCreateWikidataEntity(itemId, language_code, clientState);
                     } else if (snakDataType.equals("commonsMedia")) {
                         // do relate wikidata.commons_media
-                        log.info("Commons Media claimed via \"" + propertyEntity.getSimpleValue() + "\" - DEBUG:");
+                        log.info("Commons Media claimed via \"" + propertyEntity.getSimpleValue()
+                                + "\" ("+language_code+") DEBUG:");
                         log.warning(snakDataValue.toString());
                     } else if (snakDataType.equals("globe-coordinate")) {
                         // do relate wikidata.globe_coordinate
-                        log.info("Globe Coordinate claimed via \"" + propertyEntity.getSimpleValue() + "\" - DEBUG:");
+                        log.info("Globe Coordinate claimed via \"" + propertyEntity.getSimpleValue()
+                                + "\" ("+language_code+") DEBUG:");
                         log.warning(snakDataValue.toString());
                     } else if (snakDataType.equals("string")) {
-                        //
                         String value = snakDataValue.getString("value");
-                        referencedItemEntity = createWikidataTextValue(value, "en", clientState); // defused
+                        referencedItemEntity = getOrCreatedWikidataText(value, language_code, clientState);
                     } else {
                         log.warning("Value claimed as " + propertyEntity.getSimpleValue() + " is not of any known type "
                                 + "wikibase-item but \"" + snakDataType +"\" ("+snakDataValue+")");
                     }
-                    //
+                    // store topic reference to (new or already existing) wikidata-entity/ resp. -value topic
                     if (referencedItemEntity != null) {
                         createWikidataClaimEdge(claim_guid, wikidataItem, referencedItemEntity,
                             propertyEntity, clientState);
                         log.info("Created claim \"" + referencedItemEntity.getSimpleValue() +
                                 " (property: " + propertyEntity.getSimpleValue() +
-                                "\" for \"" + wikidataItem.getSimpleValue() + "\" - FINE");
+                                "\") for \"" + wikidataItem.getSimpleValue() + "\" - FINE");
                     } else {
                         log.warning("SKIPPED creating claim of type \""+snakDataType+"\" value for "
                                 + "\""+propertyEntity.getSimpleValue()+"\"");
@@ -566,12 +568,17 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         }
     }
 
-    private Topic createWikidataTextValue(String value, String lang, ClientState clientState) {
+    private Topic getOrCreatedWikidataText(String value, String lang, ClientState clientState) {
         Topic textValue = null;
         DeepaMehtaTransaction tx = dms.beginTx();
         try {
-            // textValue = dms.createTopic(new TopicModel(WD_TEXT_TYPE_URI, new SimpleValue(value)), clientState);
-            log.info("(Virtually) Created \"Wikidata Text\" - \"" + value +"\" - OK!");
+            textValue = dms.getTopic(WD_TEXT_TYPE_URI, new SimpleValue(value), false);
+            if (textValue == null) {
+                textValue = dms.createTopic(new TopicModel(WD_TEXT_TYPE_URI, new SimpleValue(value)), clientState);
+                log.info("CREATED \"Wikidata Text\" - \"" + value +"\" (" + lang + ") - OK!");
+            } else {
+                log.info("FETCHED \"Wikidata Text\" - \"" + textValue.getSimpleValue() +"\" (" + lang + ") - Re-using it!");
+            }
             tx.success();
         } catch (Exception ex) {
             log.warning("FAILURE during creating a wikidata value topic: " + ex.getMessage());
@@ -582,18 +589,6 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             return textValue;
         }
     }
-
-    private Topic getLanguageTopic (String language_code) {
-        Topic lang_topic = null;
-        //
-        /** Topic lang_reference = dms.getTopic("value", new SimpleValue(language_code), false);
-        log.info("Fetched language_iso_code-Topic: " + lang_reference.getSimpleValue());
-        log.info("Fetched language_iso_code-Topic: " + lang_reference.getRelatedTopic("dm4.core.composition",
-                "dm4.core.child", "dm4.core.parent", WD_LANGUAGE_URI, null, null)); **/
-        //
-        return lang_topic;
-    }
-
 
 
     // --

@@ -39,6 +39,7 @@
         })
 
         dm4c.add_listener("init", function() {
+            // if user is authenticated, then we add the wikidata-searchmode
             dm4c.toolbar.searchmode_menu.add_item({label: "Wikidata Search", value: "wikidata-search"})
         })
 
@@ -155,7 +156,14 @@
             // - defualt_text_renderer (assoc_def, wenn aggregation dann rendert dieser die combobox plus eingabefeld)
 
             function get_language_value() {
-                return language_menu.get_selection().value
+                var lang_value = undefined
+                try {
+                    lang_value = language_menu.get_selection().value
+                } catch (e) {
+                    console.error("Please initiate the \"Wikidata search\"-Mode widget before making any requests.")
+                }
+                return lang_value
+
             }
 
             function get_language_name() {

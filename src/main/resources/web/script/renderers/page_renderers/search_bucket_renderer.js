@@ -25,7 +25,7 @@
                 render('<div class="wikidata-query-info">Zero results</div>')
                 return // fixme:
             }
-            console.log(topic)
+            // ### used for development when ordinal nrs are part of the bucket-entity relation: console.log(topic)
             // sort
             search_entities.sort(result_order_sort)
             // render
