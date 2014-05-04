@@ -25,6 +25,7 @@
                 render('<div class="wikidata-query-info">Zero results</div>')
                 return // fixme:
             }
+            console.log(topic)
             // sort
             search_entities.sort(result_order_sort)
             // render

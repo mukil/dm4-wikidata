@@ -90,8 +90,8 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             "http://www.wikidata.org/w/api.php?action=wbgetclaims&ungroupedlist=1&format=json";
     private final String WD_GET_ENTITY_ENDPOINT = "http://www.wikidata.org/w/api.php?action=wbgetentities"
             + "&props=info%7Csitelinks%2Furls%7Caliases%7Clabels%7Cdescriptions&dir=ascending&format=json";
-    // private final String WD_SEARCH_ENTITY_TYPE_PROPERTY = "property";
-    // private final String WD_SEARCH_ENTITY_TYPE_ITEM = "item";
+    private final String WD_SEARCH_ENTITY_TYPE_PROPERTY = "property";
+    private final String WD_SEARCH_ENTITY_TYPE_ITEM = "item";
 
     // --- Instance Variables
 
@@ -182,10 +182,10 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
      */
 
     @GET
-    @Path("/{entityId}")
+    @Path("/{entityId}/{language_code}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Topic getOrCreateWikidataEntity(@PathParam("entityId") String entityId, String language_code,
-        @HeaderParam("Cookie") ClientState clientState) {
+    public Topic getOrCreateWikidataEntity(@PathParam("entityId") String entityId,
+        @PathParam("language_code") String language_code, @HeaderParam("Cookie") ClientState clientState) {
         String json_result = "";
         StringBuffer resultBody = new StringBuffer();
         URL requestUri = null;
@@ -441,7 +441,11 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                 }
             }
             // set wikidata url
-            entity_composite.put(DM_WEBBROWSER_URL, WIKIDATA_ENTITY_URL_PREFIX + id);
+            if (type.equals(WD_SEARCH_ENTITY_TYPE_PROPERTY)) {
+                entity_composite.put(DM_WEBBROWSER_URL, WIKIDATA_ENTITY_URL_PREFIX + "Property:" + id);
+            } else {
+                entity_composite.put(DM_WEBBROWSER_URL, WIKIDATA_ENTITY_URL_PREFIX + id);
+            }
             // ### sitelinks
             /** if (entity_response.has("sitelinks")) {
                 JSONObject sitelinks = entity_response.getJSONObject("sitelinks");
