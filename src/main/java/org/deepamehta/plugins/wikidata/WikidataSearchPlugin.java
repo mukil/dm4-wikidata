@@ -389,8 +389,12 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                                     new TopicModel(WD_SEARCH_ENTITY_ALIAS_URI, new SimpleValue(alias)));
                             }
                         }
+                        // set enity place in resultset
                         entity_composite.put(WD_SEARCH_ENTITY_ORDINAL_NR, i);
+                        // set entity-type
                         entity_composite.put(WD_SEARCH_ENTITY_TYPE_URI, type);
+                        // set language-value on entity-result
+                        entity_composite.putRef(WD_LANGUAGE_URI, WD_LANGUAGE_DATA_URI_PREFIX + lang);
                         TopicModel entity_model = new TopicModel(WD_SEARCH_ENTITIY_DATA_URI_PREFIX + id,
                                 WD_SEARCH_ENTITY_URI, entity_composite);
                         // create and reference  entity in wikidata search bucket
@@ -446,6 +450,8 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             } else {
                 entity_composite.put(DM_WEBBROWSER_URL, WIKIDATA_ENTITY_URL_PREFIX + id);
             }
+            // set language-value on entity-result
+            entity_composite.putRef(WD_LANGUAGE_URI, WD_LANGUAGE_DATA_URI_PREFIX + lang);
             // ### sitelinks
             /** if (entity_response.has("sitelinks")) {
                 JSONObject sitelinks = entity_response.getJSONObject("sitelinks");
@@ -575,6 +581,17 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             tx.finish();
             return textValue;
         }
+    }
+
+    private Topic getLanguageTopic (String language_code) {
+        Topic lang_topic = null;
+        //
+        /** Topic lang_reference = dms.getTopic("value", new SimpleValue(language_code), false);
+        log.info("Fetched language_iso_code-Topic: " + lang_reference.getSimpleValue());
+        log.info("Fetched language_iso_code-Topic: " + lang_reference.getRelatedTopic("dm4.core.composition",
+                "dm4.core.child", "dm4.core.parent", WD_LANGUAGE_URI, null, null)); **/
+        //
+        return lang_topic;
     }
 
 
