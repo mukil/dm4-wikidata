@@ -184,10 +184,8 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     @GET
     @Path("/{entityId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Topic getOrCreateWikidataEntity(@PathParam("entityId") String entityId,
+    public Topic getOrCreateWikidataEntity(@PathParam("entityId") String entityId, String language_code,
         @HeaderParam("Cookie") ClientState clientState) {
-
-        String lang = "en";
         String json_result = "";
         StringBuffer resultBody = new StringBuffer();
         URL requestUri = null;
@@ -199,7 +197,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             if (existingEntity == null) {
                 // 1) fixme: Authorize request
                 // &sites=dewiki&&languages=de
-                requestUri = new URL(WD_GET_ENTITY_ENDPOINT + "&ids="+ entityId + "&languages=" + lang); // &ids=Q5
+                requestUri = new URL(WD_GET_ENTITY_ENDPOINT + "&ids="+ entityId + "&languages=" + language_code); // &ids=Q5
                 log.fine("Requesting Wikidata Entity " + requestUri.toString());
                 // 2) initiate request
                 HttpURLConnection connection = (HttpURLConnection) requestUri.openConnection();
@@ -228,7 +226,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                     JSONObject response = new JSONObject(json_result);
                     JSONObject entities = response.getJSONObject("entities");
                     JSONObject response_entity = entities.getJSONObject(entityId);
-                    entity = createWikidataSearchEntity(response_entity, lang, clientState);
+                    entity = createWikidataSearchEntity(response_entity, language_code, clientState);
                 }
             } else {
                 entity = existingEntity;
@@ -254,9 +252,10 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
      */
 
     @GET
-    @Path("/check/claims/{id}")
+    @Path("/check/claims/{id}/{language_code}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Topic checkClaims(@PathParam("id") long topicId, @HeaderParam("Cookie") ClientState clientState) {
+    public Topic loadClaimsAndRelatedWikidataItems(@PathParam("id") long topicId,
+            @PathParam("language_code") String language_option, @HeaderParam("Cookie") ClientState clientState) {
 
         String json_result = "";
         StringBuffer resultBody = new StringBuffer();
@@ -292,7 +291,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                         Status.NO_CONTENT);
             } else {
                 json_result = resultBody.toString();
-                processWikidataClaims(json_result, wikidataItem, clientState);
+                processWikidataClaims(json_result, wikidataItem, language_option, clientState);
                 log.info("Wikidata Claim Response is FINE");
             }
             tx.success();
@@ -468,7 +467,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         }
     }
 
-    private void processWikidataClaims(String json_result, Topic wikidataItem, ClientState clientState) {
+    private void processWikidataClaims(String json_result, Topic wikidataItem, String language_code, ClientState clientState) {
         try {
             JSONObject response = new JSONObject(json_result);
             JSONArray result = response.getJSONArray("claims");
@@ -483,7 +482,8 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                     JSONObject mainsnak = entity_response.getJSONObject("mainsnak");
                     String propertyId = mainsnak.getString("property");
                     String claim_guid = entity_response.getString("id");
-                    propertyEntity = getOrCreateWikidataEntity(propertyId, clientState);
+                    // ### fetches entities just in "en"
+                    propertyEntity = getOrCreateWikidataEntity(propertyId, language_code, clientState);
                     // build up item part of the claim (if so)
                     String itemId = "";
                     String snakDataType = mainsnak.getString("datatype");
@@ -494,7 +494,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                         JSONObject snakDataValueValue = snakDataValue.getJSONObject("value");
                         long numericId = snakDataValueValue.getLong("numeric-id");
                         itemId = "Q" + numericId; // is this always of entity-type "item"? responses looks like.
-                        referencedItemEntity = getOrCreateWikidataEntity(itemId, clientState);
+                        referencedItemEntity = getOrCreateWikidataEntity(itemId, language_code, clientState);
                     } else if (snakDataType.equals("commonsMedia")) {
                         // do relate wikidata.commons_media
                         log.info("Commons Media claimed via \"" + propertyEntity.getSimpleValue() + "\" - DEBUG:");

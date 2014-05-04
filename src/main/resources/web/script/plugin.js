@@ -18,6 +18,7 @@
         // === Webclient Listeners ===
 
         dm4c.add_listener('topic_commands', function (topic) {
+            // check if user is authenticated
             if (!dm4c.has_create_permission('org.deepamehta.wikidata.search_bucket')) {
                 return
             }
@@ -28,8 +29,8 @@
                 if (entity_type === "item") {
                     commands.push({is_separator: true, context: 'context-menu'})
                     commands.push({
-                        label: 'Load claims',
-                        handler: loadRelatedItems,
+                        label: 'Show claims',
+                        handler: showClaimedItems,
                         context: ['context-menu', 'detail-panel-show']
                     })
                 }
@@ -44,6 +45,11 @@
         dm4c.add_listener("searchmode_widget", function(searchmode) {
 
             if (searchmode == "wikidata-search") {
+
+                // check if user is authenticated
+                if (!dm4c.has_create_permission('org.deepamehta.wikidata.search_bucket')) {
+                    return
+                }
 
                 // enable search button
                 dm4c.toolbar.search_button.button("enable")
@@ -73,6 +79,9 @@
 
                 }
                 language_menu.select("en")
+                // ### $('.workspace-widget').append('<span>Language</span>')
+                // ### $('.workspace-widget').append(language_menu.dom) //
+                // append elements to DOM
                 $container.append(search_type_menu.dom).append(language_menu.dom).append($input_field)
 
                 // register ENTER handler
@@ -109,9 +118,9 @@
 
         })
 
-        function loadRelatedItems() {
+        function showClaimedItems() {
 
-            var requestUri = '/wikidata/check/claims/' + dm4c.selected_object.id
+            var requestUri = '/wikidata/check/claims/' + dm4c.selected_object.id  + '/' + get_language_value()
 
             var response_data_type = response_data_type || "json"
             //
@@ -133,7 +142,7 @@
             })
 
             $('#page-content').html('<div class="field-label wikidata-search started">'
-                + 'Asking https://www.wikidata.org ... </div>')
+                + 'Asking https://www.wikidata.org ... ('+get_language_value()+') </div>')
 
             $('#page-content').append('<div class="field-item wikidata-search-spinner">'
                 + '<img src="/org.deepamehta.wikidata-search/images/ajax-loader.gif" '
@@ -144,6 +153,10 @@
             //   "dm4c.get_simple_renderer("dm4.webclient.text_renderer").render_form(page_model, parent_element)"
             // - see webclient migration to get name of all default renderer
             // - defualt_text_renderer (assoc_def, wenn aggregation dann rendert dieser die combobox plus eingabefeld)
+
+            function get_language_value() {
+                return language_menu.get_selection().value
+            }
 
         }
 
