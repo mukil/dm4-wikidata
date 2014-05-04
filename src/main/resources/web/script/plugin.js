@@ -142,7 +142,7 @@
             })
 
             $('#page-content').html('<div class="field-label wikidata-search started">'
-                + 'Asking https://www.wikidata.org ... ('+get_language_value()+') </div>')
+                + 'Asking https://www.wikidata.org in '+get_language_name()+' </div>')
 
             $('#page-content').append('<div class="field-item wikidata-search-spinner">'
                 + '<img src="/org.deepamehta.wikidata-search/images/ajax-loader.gif" '
@@ -156,6 +156,10 @@
 
             function get_language_value() {
                 return language_menu.get_selection().value
+            }
+
+            function get_language_name() {
+                return language_menu.get_selection().label
             }
 
         }
