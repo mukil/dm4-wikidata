@@ -6,7 +6,7 @@ This plugin enables you to search, explore and map the "shared structures of mea
 In particular this plugin enables you to build on wikidata in your personal information work through:
 
 * enabling you to turn any search-result entity of type "property" ([wikidata properties](http://meta.wikimedia.org/wiki/Wikidata/Data_model#Properties) - [see list of examples here](https://www.wikidata.org/wiki/Wikidata:List_of_properties)) into a DeepaMehta *Assocation Type*
-* enabling you to "Check claims" of any "Item" (roughly anything that has at least one wikipedia-page?) and thus navigate through wikidata.
+* enabling you to "Show claims" of any "Wikidata Item" (roughly anything that has at least one wikipedia-page?) and thus navigate along related wikidata items
 
 [DeepaMehta](http://www.deepamehta.de) is a free software platform for associative and personal information work and a situation-centered user interface based on *free placement* in *stable views*.
 
@@ -17,7 +17,7 @@ You can find the installable bundle-file at [http://download.deepamehta.de](http
 
 ## Installation
 
-Copy the downloaded `wikidata-type-search-0.0.1.jar` file into your DeepaMehta bundle repository and re-start your [DeepaMehta installation](https://github.com/jri/deepamehta#requirements).
+Copy the downloaded `wikidata-search-0.0.2-SNAPSHOT.jar` file into your DeepaMehta bundle repository and re-start your [DeepaMehta installation](https://github.com/jri/deepamehta#requirements).
 
 
 ## Usage & Installation Hints
@@ -35,6 +35,23 @@ This software is released under the terms of the GNU General Public License in V
 
 
 # Development History
+
+0.0.2-SNAPSHOT, May 04, 2014
+- Introduced wikidata-item entities
+- Navigating wikidata-items along all their "Claims"
+- Processing of claimed wikidata-text values (re-using by value) works
+- Multi-language support across all queries works
+- A few fixes related to URL + Language references
+- Fixes search-entity order in resultsets
+- Introduced some graphics + credits
+- Compatible with DeepaMehta 4.2
+
+Known issues:
+- With this simplified application-model there can be just one 
+  language:value/sitelink-pair per search-entity/topic
+- Missing license rendering (wikidata entity page renderer) (see ###)
+- Search entity order of single entities may-be wrong when 
+  those occure in many resultset
 
 0.0.1, Feb 28, 2014
 - Compatible with DeepaMehta 4.2

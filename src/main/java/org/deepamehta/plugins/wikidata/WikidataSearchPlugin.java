@@ -96,6 +96,8 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     // --- Instance Variables
 
     private final String WIKIDATA_ENTITY_URL_PREFIX = "//www.wikidata.org/wiki/";
+    private final String WIKIDATA_PROPERTY_ENTITY_URL_PREFIX = "Property:";
+    private final String WIKIMEDIA_COMMONS_MEDIA_FILE_URL_PREFIX = "//commons.wikimedia.org/wiki/File:";
 
     private boolean isInitialized = false;
     private AccessControlService acService = null;
@@ -446,7 +448,8 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             }
             // set wikidata url
             if (type.equals(WD_SEARCH_ENTITY_TYPE_PROPERTY)) {
-                entity_composite.put(DM_WEBBROWSER_URL, WIKIDATA_ENTITY_URL_PREFIX + "Property:" + id);
+                entity_composite.put(DM_WEBBROWSER_URL, WIKIDATA_ENTITY_URL_PREFIX
+                        + WIKIDATA_PROPERTY_ENTITY_URL_PREFIX + id);
             } else {
                 entity_composite.put(DM_WEBBROWSER_URL, WIKIDATA_ENTITY_URL_PREFIX + id);
             }
@@ -511,6 +514,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                         log.info("Commons Media claimed via \"" + propertyEntity.getSimpleValue()
                                 + "\" ("+language_code+") DEBUG:");
                         log.warning(snakDataValue.toString());
+                        // ### make use of WIKIMEDIA_COMMONS_MEDIA_FILE_URL_PREFIX and implement page-renderer
                     } else if (snakDataType.equals("globe-coordinate")) {
                         // do relate wikidata.globe_coordinate
                         log.info("Globe Coordinate claimed via \"" + propertyEntity.getSimpleValue()
@@ -522,6 +526,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                     } else {
                         log.warning("Value claimed as " + propertyEntity.getSimpleValue() + " is not of any known type "
                                 + "wikibase-item but \"" + snakDataType +"\" ("+snakDataValue+")");
+                        // e.g. snakDataType.equals("quantity")
                     }
                     // store topic reference to (new or already existing) wikidata-entity/ resp. -value topic
                     if (referencedItemEntity != null) {
