@@ -54,10 +54,11 @@
                 if (item_type === "item") {
                     // set up result-item element
                     $item_name = $('<div class="item entity-name" '
-                        + 'title="Show Wikidata Item Entity: ' +entity_uri+ '" id="name-'+ entity_id +'">').append(entity_name)
+                        + 'title="Show Wikidata Item Entity: ' +entity_uri+ '" id="name-'+ entity_id +'">')
+                        .append(entity_name)
                     $item_icon = $('<div class="item entity-icon" title="Reveal '
-                        + 'Wikidata Item Entity: ' +entity_uri+ '"><img id="icon-'+ entity_id +'" src="/org.deepamehta.wikidata-search/images/rect3228.png" />'
-                        + '</div>')
+                        + 'Wikidata Item Entity: ' +entity_uri+ '"><img id="icon-'+ entity_id
+                        +'" src="/org.deepamehta.wikidata-search/images/rect3228.png" /></div>')
                     // click handler 1
                     $item_name.click(function(e) {
                         dm4c.do_reveal_related_topic(e.target.id.substr(5), "show")

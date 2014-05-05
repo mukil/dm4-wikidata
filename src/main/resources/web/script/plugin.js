@@ -4,7 +4,7 @@
  * DeepaMehta 4 Webclient Wikidata JavaScript Plugin
  * @author Malte Reißig (<malte@mikromedia.de>)
  * @website https://github.com/mukil/dm4-wikidata
- * @version 0.0.2-SNAPSHOT
+ * @version 0.0.2
  *
  */
 
@@ -159,10 +159,12 @@
                 var lang_value = undefined
                 try {
                     lang_value = language_menu.get_selection().value
+                    return lang_value
                 } catch (e) {
-                    console.error("Please initiate the \"Wikidata search\"-Mode widget before making any requests.")
+                    console.error("Please initiate the \"Wikidata search\"-Mode widget before making any requests - "
+                        + " FALLBACK: Now requesting data in EN")
+                    return "en"
                 }
-                return lang_value
 
             }
 
