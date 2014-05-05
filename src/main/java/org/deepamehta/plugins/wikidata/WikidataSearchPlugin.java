@@ -37,7 +37,7 @@ import org.deepamehta.plugins.wikidata.service.WikidataSearchService;
  *
  * @author Malte Reißig (<malte@mikromedia.de>)
  * @website https://github.com/mukil/dm4-wikidata
- * @version 0.0.2
+ * @version 0.0.3-SNAPSHOT
  */
 
 @Path("/wikidata")
