@@ -101,8 +101,9 @@
 
                 var search_value = $('input.wikidata-type-search').val()
                     search_value = search_value.replace(" ", "+")
+                    search_value = search_value.replace(" ", "+")
                     search_value = encodeURIComponent(search_value)
-
+                    showSpinningWheel()
                 if (search_value !== "" && search_value !== " ") {
                     return dm4c.restc.request("GET", "/wikidata/search/" + get_search_type_value() + "/"
                         + search_value + '/' + get_language_value())
@@ -118,6 +119,11 @@
             }
 
         })
+
+        function showSpinningWheel () {
+            $('#page-content').html('<img src="/org.deepamehta.wikidata-search/images/ajax-loader.gif" '
+                + ' class="wikidata-loading" />')
+        }
 
         function showClaimedItems() {
 
