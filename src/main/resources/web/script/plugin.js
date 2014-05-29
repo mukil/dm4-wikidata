@@ -29,8 +29,8 @@
                 if (entity_type === "item") {
                     commands.push({is_separator: true, context: 'context-menu'})
                     commands.push({
-                        label: 'Show claims',
-                        handler: showClaimedItems,
+                        label: 'Import claims',
+                        handler: importClaimedItems,
                         context: ['context-menu', 'detail-panel-show']
                     })
                 }
@@ -125,7 +125,7 @@
                 + ' class="wikidata-loading" />')
         }
 
-        function showClaimedItems() {
+        function importClaimedItems () {
 
             var requestUri = '/wikidata/check/claims/' + dm4c.selected_object.id  + '/' + get_language_value()
 
