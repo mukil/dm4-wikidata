@@ -187,6 +187,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
      *  This method gets (or creates) a \"Wikidata Search Entity\" (in DeepaMehta 4) by its ID (wikidata).
      *
      *  @param {entityId}           wikidataId
+     *  ### Needs to support update of values (if entity was already imported)
      */
 
     @GET
@@ -504,6 +505,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         try {
             JSONObject response = new JSONObject(json_result);
             JSONArray result = response.getJSONArray("claims");
+            // ### Needs to check if formerly imported claims are still part of the result set and if not, remove them
             if (result.length() > 0) {
                 log.info("Wikidata Plugin is processing " + result.length() + " CLAIMS");
                 for (int i=0; i < result.length(); i++) {
@@ -595,6 +597,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         }
     }
 
+    /***  ### Needs to support update of values (if entity was already imported) */
     private Topic getOrCreatedWikidataText(String value, String lang, ClientState clientState) {
         Topic textValue = null;
         // 1) query for text-value
