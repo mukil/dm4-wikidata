@@ -7,7 +7,7 @@ In particular this plugin provides users the following options and commands:
 
 *   `Wikidata Search`-Mode in the `Toolbar`, with the options
     *    to search for `Items` by text (wikidata query string)
-    *    to search for `Properties` by text (wikidata query string) and[BR]
+    *    to search for `Properties` by text (wikidata query string) and
     *    to specifiy the `Language` of the wikidata-community for each search
 *   `Import Claims`-command available on any `Search Result`-Topic (of type _item_)
 *   `Create Association Type`-command available on any `Search Result`-Topic (of type _property_)
