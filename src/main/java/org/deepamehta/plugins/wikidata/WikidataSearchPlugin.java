@@ -103,17 +103,10 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
 
 
 
-    /**
-     *  This method searches all wikidata entities by text and the given language code.
-     *
-     *  @param {entity}             entity-type (either "item" or "property")
-     *  @param {query}              name of wikidata property in search
-     *  @param {language_code}      ISO 639-1 language code (must exist in DM installation)
-     */
-
     @GET
     @Path("/search/{entity}/{query}/{language_code}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Override
     public Topic searchWikidataEntity(@PathParam("query") String query, @PathParam("language_code") String lang,
                 @HeaderParam("Cookie") ClientState clientState, @PathParam("entity") String type) {
 
@@ -183,16 +176,10 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         }
     }
 
-    /**
-     *  This method gets (or creates) a \"Wikidata Search Entity\" (in DeepaMehta 4) by its ID (wikidata).
-     *
-     *  @param {entityId}           wikidataId
-     *  ### Needs to support update of values (if entity was already imported)
-     */
-
     @GET
     @Path("/{entityId}/{language_code}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Override
     public Topic getOrCreateWikidataEntity(@PathParam("entityId") String entityId,
         @PathParam("language_code") String language_code, @HeaderParam("Cookie") ClientState clientState) {
         String json_result = "";
@@ -261,15 +248,10 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         }
     }
 
-    /**
-     *  This method loads all claims for a wikidata entity into DeepaMehta 4.
-     *
-     *  @param {id}              wikidata entity id
-     */
-
     @GET
     @Path("/check/claims/{id}/{language_code}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Override
     public Topic loadClaimsAndRelatedWikidataItems(@PathParam("id") long topicId,
             @PathParam("language_code") String language_option, @HeaderParam("Cookie") ClientState clientState) {
 
@@ -333,15 +315,10 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         }
     }
 
-    /**
-     *  This method creates a DeepaMehta Association Type given a \"Wikidata Search Entity\" (of type=property).
-     *
-     *  @param {id}      id of wikidata search entity (type=property)
-     */
-
     @GET
     @Path("/property/turn/{id}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Override
     public Topic createWikidataAssociationType(@PathParam("id") long id,
             @HeaderParam("Cookie") ClientState clientState) {
 

@@ -116,13 +116,13 @@
                     + 'Creative Commons CC0 License (CC0 1.0)</a></div>')
                 render('<p>&nbsp;</p>')
                 // for (var rel_topic_idx in otherwise_related_topics) {
-                    console.log(otherwise_related_topics)
+                    // console.log(otherwise_related_topics)
                    // ### render custom related topics of type:
                    // "dm4.webbrowser.url" and "org.deepamehta.wikidata.language",
                    //
                 // }
                 // render all otherwise related topics
-                render('<div class="field-label wikidata-relation-type">DeepaMehta 4 - What`s related</div>')
+                render('<div class="field-label wikidata-relation-type">DeepaMehta 4 - What`s related?</div>')
                 dm4c.render.topic_associations(topic.id)
 
             } else {                                                              // --  Wikidata Property Renderer ---
