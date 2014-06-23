@@ -18,13 +18,13 @@ Currently wikidata can be queried  in the following (randomly selected) language
 
 `Afrikaans`, `Albanian`, `Arabic`, `Burmes`, `Chinese`, `English`, `German`, `Greek`, `Indonesian`, `Japanese`, `Kirundi`, `Persian`, `Polish`, `Portuguese`, `Romanian`, `Russian`, `Sanskrit`, `Slovak`, `Slovene`, `Spanish`, `Swedish`, `Thai` and `Turkish`.
 
-Please excuse and get in touch with us if you're missing your language.
+If your language is missing here, please excuse that and file an issue at http://trac.deepamehta.de.
 
-[DeepaMehta 4](http://www.deepamehta.de) is a free software platform for associative and personal information work. Its graphical user-interface is situation-centered user and based on *free placement* in *stable views*.
 
-## Research & Documentation
+## Requirements
 
-Find more infos on this project in the DeepaMehta Community Trac at https://trac.deepamehta.de/wiki/WikidataSearchPlugin%20
+DeepaMehta 4 is a platform for collaboration and knowledge management.
+https://github.com/jri/deepamehta
 
 ## Download & Installation
 
@@ -40,11 +40,13 @@ For any search-result entity of type "item" you can `Import claims` and after th
 
 For any search-result entity of type "property" ([wikidata properties](http://meta.wikimedia.org/wiki/Wikidata/Data_model#Properties) - [they are](https://www.wikidata.org/wiki/Wikidata:List_of_properties)) there is a "+" (`Turn into Associaton Type`-command) availble in the result listing.
 
+## Research & Documentation
+
+You can find more infos on this project in the DeepaMehta Community Trac at https://trac.deepamehta.de/wiki/WikidataSearchPlugin%20
 
 # GNU Public License
 
 This software is released under the terms of the GNU General Public License in Version 3.0, 2007. You can find a copy of that in the root directory of this repository or read it [here](http://www.gnu.org/licenses/gpl).
-
 
 # Version History
 
