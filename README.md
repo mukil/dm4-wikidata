@@ -5,12 +5,12 @@ This plugin  provides users the functionality they need to build personal views,
 
 In particular this plugin provides users the following options and commands:
 
-* `Wikidata Search`-Mode in the `Toolbar`, with the options
-** to search for `Items` by text (wikidata query string),
-** to search for `Properties` by text (wikidata query string) and
-** to specifiy the `Language` of the wikidata-community for each search
-* `Import Claims`-command available on any `Search Result`-Topic (of type _item_)
-* `Create Association Type`-command available on any `Search Result`-Topic (of type _property_)
+*   `Wikidata Search`-Mode in the `Toolbar`, with the options
+    *    to search for `Items` by text (wikidata query string)
+    *    to search for `Properties` by text (wikidata query string) and[BR]
+    *    to specifiy the `Language` of the wikidata-community for each search
+*   `Import Claims`-command available on any `Search Result`-Topic (of type _item_)
+*   `Create Association Type`-command available on any `Search Result`-Topic (of type _property_)
 
 The motivation for this plugin was to enable users and researchers from various language-communities to (a) _query_ and _navigate_ the actual wikidata in a graphical way and (b) based on that, _create_ and _share_ personal views (so called Topic Maps) around items currently discussed in wikidata.
 
