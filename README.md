@@ -50,20 +50,23 @@ This software is released under the terms of the GNU General Public License in V
 
 # Version History
 
-0.0.3-SNAPSHOT, UPCOMING
-- Introducing custom page renderer for "Wikidata Entities" (sorting alphabetically)
-- Added correct license rendering for data provided by wikidata
-- New label: "Show claims" is now "Import claims"
-- Updating values of all involved wikidata-items (on every "Import claims"-command)
+0.0.3, Jul 07, 2014
+- Introducing custom page renderer for "Wikidata Entities" 
+  (presenting statements and all their values in alphabetical order)
+- Added license rendering for data provided by wikidata
+- More accurate labelling of topic command: "Import claims" instead of "Show claims"
+- Simple updating mechanism for all values of involved wikidata-items (on every "Import claims"-command)
 - Introduced custom rendering for all imported "Wikidata properties"
 - New wikidata-service method to navigate to all associated associations (of a property-entity)
 - HTTP Optimization: Just one GET request per "property" (during "Import claims")
 - Compatible with DeepaMehta 4.3
 
 Known issues:
-- No update-logic part of import (e.g. if remote-values changed)
+- No qualifiers imported
+- No support for quanities, commonsMedia and globe-coordinates
+- No deletion of once imported claims (e.g. if claim gets deleted)
 - With this simplified application-model there can be just one 
-  language:value/sitelink-pair per search-entity/topic
+  language:value per search-entity/topic
 - Search entity order of single entities may-be wrong when 
   those occure in many resultset
 
