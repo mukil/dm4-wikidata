@@ -361,7 +361,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     public List<RelatedAssociation> getTopicRelatedAssociations (@PathParam("id") long topicId) {
         Topic topic = dms.getTopic(topicId, false);
         List<RelatedAssociation> associations = topic.getRelatedAssociations("dm4.core.aggregation",
-                "dm4.core.child", "dm4.core.parent", "org.deepamehta.wikidata.claim_edge", true, false);
+                "dm4.core.child", "dm4.core.parent", "org.deepamehta.wikidata.claim_edge", false, false);
         return associations;
     }
 
