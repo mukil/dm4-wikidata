@@ -15,7 +15,6 @@ import java.util.logging.Logger;
  *
  * @author Malte Reißig (<malte@mikromedia.de>)
  * @website https://github.com/mukil/dm4-wikidata
- * @version 0.0.2
  */
 
 public class Migration2 extends Migration {

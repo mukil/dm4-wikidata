@@ -1,6 +1,6 @@
 
 /**
- * A page_renderer_impl that renders the "Search Claim" page
+ * A page_renderer_impl that renders the "Wikidata Search Entity" page
  *
  * @see PageRenderer interface (/de.deepamehta.webclient/script/interfaces/page_renderer.js).
  */
