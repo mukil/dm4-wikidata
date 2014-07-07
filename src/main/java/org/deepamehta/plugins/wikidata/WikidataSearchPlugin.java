@@ -51,8 +51,8 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
 
     private Logger log = Logger.getLogger(getClass().getName());
 
-    private final String DEEPAMEHTA_VERSION = "DeepaMehta 4.3";
-    private final String WIKIDATA_TYPE_SEARCH_VERSION = "0.0.3-SNAPSHOT";
+    private final String DEEPAMEHTA_VERSION = "DeepaMehta 4.4";
+    private final String WIKIDATA_TYPE_SEARCH_VERSION = "0.0.4-SNAPSHOT";
     private final String CHARSET = "UTF-8";
 
     // --- DeepaMehta 4 URIs
@@ -361,7 +361,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     public List<RelatedAssociation> getTopicRelatedAssociations (@PathParam("id") long topicId) {
         Topic topic = dms.getTopic(topicId, false);
         List<RelatedAssociation> associations = topic.getRelatedAssociations("dm4.core.aggregation",
-                "dm4.core.child", "dm4.core.parent", "org.deepamehta.wikidata.claim_edge", false, false);
+                "dm4.core.child", "dm4.core.parent", "org.deepamehta.wikidata.claim_edge", true, false);
         return associations;
     }
 
@@ -684,9 +684,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     /** --- Implementing PluginService Interfaces to consume AccessControlService --- */
 
     @Override
-    @ConsumesService({
-        "de.deepamehta.plugins.accesscontrol.service.AccessControlService"
-    })
+    @ConsumesService(de.deepamehta.plugins.accesscontrol.service.AccessControlService.class)
     public void serviceArrived(PluginService service) {
         if (service instanceof AccessControlService) {
             acService = (AccessControlService) service;
@@ -694,9 +692,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     }
 
     @Override
-    @ConsumesService({
-        "de.deepamehta.plugins.accesscontrol.service.AccessControlService"
-    })
+    @ConsumesService(de.deepamehta.plugins.accesscontrol.service.AccessControlService.class)
     public void serviceGone(PluginService service) {
         if (service == acService) {
             acService = null;

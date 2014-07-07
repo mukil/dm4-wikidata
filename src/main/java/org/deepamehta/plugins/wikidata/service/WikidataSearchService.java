@@ -15,7 +15,7 @@ import java.util.List;
  *
  * @author Malte Reißig (<malte@mikromedia.de>)
  * @website https://github.com/mukil/dm4-wikidata
- * @version 0.0.3-SNAPSHOT
+ * @version 0.0.4-SNAPSHOT
  */
 public interface WikidataSearchService extends PluginService {
 
