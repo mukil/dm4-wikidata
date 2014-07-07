@@ -84,14 +84,32 @@
                 $list_item.append($item_add).append($item_icon).append($item_name).append($item_descr)
 
                 $('#page-content .wikidata-search-list').append($list_item)
+
             }
 
-            render('<br/><br/><a style="border: 0px;" target="_blank" href="https://www.wikidata.org">'
-                + '<img title="Search results powered by www.wikidata.org" '
-                + 'src="/org.deepamehta.wikidata-search/images/Wikidata-logo-en-135px.png" /></a>')
+            render_wikidata_footer()
+
+
+
+            // --- Private helpers
 
             function render(content_element) {
                 $('#page-content').append(content_element)
+            }
+
+            function render_wikidata_footer () {
+                // render wikidata data license
+                render('<div class="field-label attribution">Attribution</div>')
+                render('<div class="field-value license"><a href="https://creativecommons.org/publicdomain/zero/1.0/" '
+                    + 'title="CC0 1.0 Licensed - Read more about this license (English)">'
+                    + 'Public Domain Dedication, CC0 1.0 License</a></div>')
+                // render wikidata project link
+                render('<div class="field-value project-logo">'
+                    + '<a style="border: 0px;" target="_blank" href="https://www.wikidata.org">'
+                    + '<img title="Search results powered by Wikidata - Visit project website" '
+                    + 'src="/org.deepamehta.wikidata-search/images/Wikidata-logo-en-135px.png" /></a>'
+                    + '</div>')
+
             }
 
             function empty_page() {

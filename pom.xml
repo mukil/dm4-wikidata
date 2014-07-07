@@ -13,19 +13,19 @@
     <parent>
         <groupId>de.deepamehta</groupId>
         <artifactId>deepamehta-plugin-parent</artifactId>
-        <version>4.3-SNAPSHOT</version>
+        <version>4.3</version>
     </parent>
 
     <dependencies>
         <dependency>
             <groupId>de.deepamehta</groupId>
             <artifactId>deepamehta-accesscontrol</artifactId>
-            <version>4.3-SNAPSHOT</version>
+            <version>4.3</version>
         </dependency>
         <dependency>
             <groupId>de.deepamehta</groupId>
             <artifactId>deepamehta-workspaces</artifactId>
-            <version>4.3-SNAPSHOT</version>
+            <version>4.3</version>
         </dependency>
     </dependencies>
 
