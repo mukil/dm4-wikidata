@@ -106,7 +106,7 @@
                     showSpinningWheel()
                 if (search_value !== "" && search_value !== " ") {
                     return dm4c.restc.request("GET", "/wikidata/search/" + get_search_type_value() + "/"
-                        + search_value + '/' + get_language_value())
+                        + search_value + '/' + get_language_value()) // this request blocks the Browser/UI .. 
                 }
             }
 
