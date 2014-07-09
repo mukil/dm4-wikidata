@@ -11,6 +11,6 @@ Now, onto our task for today: Getting to know and querying actual #wikidata.
 
 !["Screen 2: Details for 'Brazil' after 'Import claims'"](https://raw.githubusercontent.com/mukil/dm4-wikidata/master/help/search-brazil/wikidata_search_brazil_screen_2.png "Screen 1: Details for 'Brazil' after 'Import claims'")
 
-!["Screen 3: Revealing the 'basic form of government' for Brazil"](https://raw.githubusercontent.com/mukil/dm4-wikidata/master/help/search-brazil/wikidata_search_brazil_screen_1.png "Screen 1: Revealing the 'basic form of government' for Brazil")
+!["Screen 3: Revealing the 'basic form of government' for Brazil"](https://raw.githubusercontent.com/mukil/dm4-wikidata/master/help/search-brazil/wikidata_search_brazil_screen_3.png "Screen 1: Revealing the 'basic form of government' for Brazil")
 
 
