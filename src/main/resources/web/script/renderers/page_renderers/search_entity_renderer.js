@@ -148,7 +148,14 @@
 
             } else {                                                              // --  Wikidata Property Renderer ---
 
-                load_related_claims(topic.id, function (data) {
+                var default_topic_renderer = dm4c.get_page_renderer("dm4.webclient.topic_renderer")
+                    default_topic_renderer.render_page(topic)
+
+                    render('<div class="field-label">Wikidata Claims</div>')
+                    render('<div class="field-value">Rendering of claimed items is currently de-activated due '
+                        + 'to issue <a href="https://trac.deepamehta.de/ticket/672">#672</a></div>')
+
+                /** load_related_claims(topic.id, function (data) {
                     var default_topic_renderer = dm4c.get_page_renderer("dm4.webclient.topic_renderer")
                     default_topic_renderer.render_page(topic)
                     render('<div class="field-label">Wikidata Claims</div>')
@@ -195,7 +202,9 @@
                     render($container_p)
                     render_wikidata_footer()
 
-                })
+                }) **/
+
+                render_wikidata_footer()
 
             }
 
