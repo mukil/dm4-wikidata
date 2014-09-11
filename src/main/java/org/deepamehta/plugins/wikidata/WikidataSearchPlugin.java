@@ -58,13 +58,6 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
 
     private final String DM_WEBBROWSER_URL = "dm4.webbrowser.url";
 
-    private final String DM_FILE_TYPE_URI = "dm4.files.file";
-    private final String DM_FILE_NAME_TYPE_URI = "dm4.files.file_name";
-    private final String DM_FILE_PATH_TYPE_URI = "dm4.files.path";
-    private final String DM_FILE_SIZE_TYPE_URI = "dm4.files.size";
-    private final String DM_FILE_MEDIA_TYPE_URI = "dm4.files.media_type";
-    private final String DM_FILE_CONTENT_TYPE_URI = "dm4.files.file_content";
-
     // --- Wikidata DeepaMehta URIs
 
     private final String WS_WIKIDATA_URI = "org.deepamehta.workspaces.wikidata";
@@ -86,7 +79,13 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     private final String WD_SEARCH_ENTITIY_DATA_URI_PREFIX = "org.deepamehta.wikidata.entity_";
 
     private final String WD_TEXT_TYPE_URI = "org.deepamehta.wikidata.text";
+    
     private final String WD_COMMONS_MEDIA_TYPE_URI = "org.deepamehta.wikidata.commons_media";
+    private final String WD_COMMONS_MEDIA_NAME_TYPE_URI = "org.deepamehta.wikidata.commons_media_name";
+    private final String WD_COMMONS_MEDIA_PATH_TYPE_URI = "org.deepamehta.wikidata.commons_media_path";
+    private final String WD_COMMONS_MEDIA_TYPE_TYPE_URI = "org.deepamehta.wikidata.commons_media_type";
+    private final String WD_COMMONS_LICENSE_NAME_TYPE_URI = "org.deepamehta.wikidata.commons_media_license_name";
+    private final String WD_COMMONS_LICENSE_INFO_TYPE_URI = "org.deepamehta.wikidata.commons_media_license_info";
     // private final String WD_GLOBE_COORDINATE_TYPE_URI = "org.deepamehta.wikidata.globe_coordinate";
 
     private final String WD_ENTITY_CLAIM_EDGE = "org.deepamehta.wikidata.claim_edge";
@@ -567,18 +566,8 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                     } else if (snakDataType.equals("commonsMedia")) {
                         // do relate wikidata.commons_media
                         if (snakDataValue.has("value")) {
-                            // ### getOrCreateWikimediaCommonsMedia()
                             String fileName = snakDataValue.getString("value");
-                            CompositeValueModel fileCompositeModel = new CompositeValueModel().
-                                put(fileName, DM_FILE_NAME_TYPE_URI).
-                                put(WIKIMEDIA_COMMONS_MEDIA_FILE_URL_PREFIX + fileName, DM_FILE_PATH_TYPE_URI);
-                            TopicModel fileTopicModel = new TopicModel(DM_FILE_TYPE_URI, fileCompositeModel);
-                            // ### try creating topic in advance
-                            // Topic fileTopic = dms.createTopic(fileTopicModel, clientState);
-                            CompositeValueModel wikimediaCommonsModel = new CompositeValueModel()
-                                .put(DM_FILE_TYPE_URI, fileTopicModel);
-                            referencedItemEntity = dms.createTopic(new TopicModel(WD_COMMONS_MEDIA_TYPE_URI,
-                                    wikimediaCommonsModel), clientState);
+                            referencedItemEntity = getOrCreateWikimediaCommonsMediaTopic(fileName, clientState);
                             log.info(" --- FINE! --- Related Wikimedia Commons File to Wikidata Item!");
                         }
                         /**  **/
@@ -722,6 +711,28 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         if (service == acService) {
             acService = null;
         }
+    }
+
+    private Topic getOrCreateWikimediaCommonsMediaTopic(String fileName, ClientState clientState) {
+        Topic mediaTopic = dms.getTopic(WD_COMMONS_MEDIA_NAME_TYPE_URI, new SimpleValue(fileName), false);
+        if (mediaTopic == null) { // create new media topic
+            CompositeValueModel mediaCompositeModel = new CompositeValueModel().
+                put(WD_COMMONS_MEDIA_NAME_TYPE_URI, fileName);
+            // ### enrichAboutWikimediaCommonsMetaData(mediaCompositeModel, fileName);
+            TopicModel mediaTopicModel = new TopicModel(WD_COMMONS_MEDIA_TYPE_URI, mediaCompositeModel);
+            mediaTopic = dms.createTopic(mediaTopicModel, clientState);
+            log.info("Created new Wikimedia Commons Media Topic \"" + mediaTopic.getSimpleValue().toString());
+        } else {
+            mediaTopic = mediaTopic.getRelatedTopic("dm4.core.composition", 
+                "dm4.core.child", "dm4.core.parent", WD_COMMONS_MEDIA_TYPE_URI, true, false);
+        }
+        // reference existing media topic ### here is no update mechanism yet
+        return mediaTopic;
+    }
+
+    private void enrichAboutWikimediaCommonsMetaData(CompositeValueModel model, String fileName) {
+        // 1) fetch data by name from http://tools.wmflabs.org/magnus-toolserver/commonsapi.php?image=
+        // 2) mediaCompositeModel.put(WD_COMMONS_MEDIA_PATH_TYPE_URI, filePath);
     }
 
 }

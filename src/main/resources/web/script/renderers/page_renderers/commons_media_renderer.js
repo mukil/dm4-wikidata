@@ -19,9 +19,10 @@
             render('<div class="field-label">Wikidata Commons Media</div>')
             render('<div class="wikidata-query-info">\"'+ topic.value + '\"</div>')
 
-            /** var entity_description = ""
-            if (topic.composite.hasOwnProperty('org.deepamehta.wikidata.search_entity_description')) {
-                entity_description = topic.composite['org.deepamehta.wikidata.search_entity_description'].value
+            /* var image_path = ""
+            if (topic.composite.hasOwnProperty('org.deepamehta.wikidata.commons_media_path')) {
+                image_path = topic.composite['org.deepamehta.wikidata.commons_media_path'].value
+                render('<img src="http://'+image_path+'" title="Wikimedia Commons Item '+topic.value+'" />')
             } **/
 
             /** var default_topic_renderer = dm4c.get_page_renderer("dm4.webclient.topic_renderer")
