@@ -6,26 +6,26 @@
 
     <name>DeepaMehta 4 Wikidata Search</name>
     <groupId>org.deepamehta</groupId>
-    <artifactId>dm44-wikidata-search</artifactId>
+    <artifactId>dm43-wikidata-search</artifactId>
     <version>0.0.4-SNAPSHOT</version>
     <packaging>bundle</packaging>
 
     <parent>
         <groupId>de.deepamehta</groupId>
         <artifactId>deepamehta-plugin-parent</artifactId>
-        <version>4.4-SNAPSHOT</version>
+        <version>4.3</version>
     </parent>
 
     <dependencies>
         <dependency>
             <groupId>de.deepamehta</groupId>
             <artifactId>deepamehta-accesscontrol</artifactId>
-            <version>4.4-SNAPSHOT</version>
+            <version>4.3</version>
         </dependency>
         <dependency>
             <groupId>de.deepamehta</groupId>
             <artifactId>deepamehta-workspaces</artifactId>
-            <version>4.4-SNAPSHOT</version>
+            <version>4.3</version>
         </dependency>
     </dependencies>
 

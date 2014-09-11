@@ -709,7 +709,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     /** --- Implementing PluginService Interfaces to consume AccessControlService --- */
 
     @Override
-    @ConsumesService(de.deepamehta.plugins.accesscontrol.service.AccessControlService.class)
+    @ConsumesService("de.deepamehta.plugins.accesscontrol.service.AccessControlService")
     public void serviceArrived(PluginService service) {
         if (service instanceof AccessControlService) {
             acService = (AccessControlService) service;
@@ -717,7 +717,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     }
 
     @Override
-    @ConsumesService(de.deepamehta.plugins.accesscontrol.service.AccessControlService.class)
+    @ConsumesService("de.deepamehta.plugins.accesscontrol.service.AccessControlService")
     public void serviceGone(PluginService service) {
         if (service == acService) {
             acService = null;
