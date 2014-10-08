@@ -19,6 +19,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
@@ -31,6 +32,16 @@ import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.deepamehta.plugins.wikidata.service.WikidataSearchService;
+import org.deepamehta.plugins.wikidata.wdtk.EntityTimerProcessor;
+import org.wikidata.wdtk.datamodel.interfaces.EntityDocumentProcessor;
+import org.wikidata.wdtk.datamodel.interfaces.ItemDocument;
+import org.wikidata.wdtk.datamodel.interfaces.PropertyDocument;
+import org.wikidata.wdtk.datamodel.interfaces.Statement;
+import org.wikidata.wdtk.datamodel.interfaces.StatementGroup;
+import org.wikidata.wdtk.datamodel.interfaces.Value;
+import org.wikidata.wdtk.datamodel.interfaces.ValueSnak;
+import org.wikidata.wdtk.datamodel.json.ValueJsonConverter;
+import org.wikidata.wdtk.dumpfiles.DumpProcessingController;
 
 
 
@@ -369,6 +380,14 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                 "dm4.core.child", "dm4.core.parent", "org.deepamehta.wikidata.claim_edge", false, false);
         return associations;
     }
+    
+    @GET
+    @Path("/import/humans")
+    public void processPersonsFromWikidataDump() {
+        WikidataPersonaProcessor wikidataPersonaProcessor = new WikidataPersonaProcessor();
+        processEntitiesFromWikidataDump(wikidataPersonaProcessor);
+    }
+    
 
 
     // --
@@ -733,6 +752,180 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     private void enrichAboutWikimediaCommonsMetaData(CompositeValueModel model, String fileName) {
         // 1) fetch data by name from http://tools.wmflabs.org/magnus-toolserver/commonsapi.php?image=
         // 2) mediaCompositeModel.put(WD_COMMONS_MEDIA_PATH_TYPE_URI, filePath);
+    }
+    
+    
+    
+    // --
+    // --- Methods to process and import topics based on a complete (daily) wikidatawiki (json) dump.
+    // --
+    
+    /**
+     * Processes all entities in a Wikidata dump using the given entity
+     * processor. By default, the most recent JSON dump will be used. In offline
+     * mode, only the most recent previously downloaded file is considered.
+     *
+     * @param entityProcessor the object to use for processing entities
+     * in this dump
+     */
+    private void processEntitiesFromWikidataDump(EntityDocumentProcessor entityProcessor) {
+        // Importer settings
+        boolean OFFLINE_MODE = false;
+        int TIMEOUT_SEC = 3;
+        boolean ONLY_CURRENT_REVISIONS = false;
+        // Controller object for processing dumps:
+        DumpProcessingController dumpProcessingController = new DumpProcessingController("wikidatawiki");
+        dumpProcessingController.setOfflineMode(OFFLINE_MODE);
+        try {
+            // Use another download directory:
+            dumpProcessingController.setDownloadDirectory(findDumpDirectoryPath());
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+        // Register two entity processors, the one given for persons, the other as a timer
+        dumpProcessingController.registerEntityDocumentProcessor(entityProcessor, null, ONLY_CURRENT_REVISIONS);
+        // Also add a timer that reports some basic progress information:
+        EntityTimerProcessor entityTimerProcessor = new EntityTimerProcessor(TIMEOUT_SEC);
+        dumpProcessingController.registerEntityDocumentProcessor(entityTimerProcessor, null, ONLY_CURRENT_REVISIONS);
+        // 
+        try {
+           dumpProcessingController.processMostRecentJsonDump();
+        } catch (TimeoutException e) {
+            // The timer caused a time out. Continue and finish normally.
+        }
+        entityTimerProcessor.stop();
+    }
+    
+    private String findDumpDirectoryPath() {
+        // ### use Sysetm.getenv() for the best OS independent solution
+        // see http://docs.oracle.com/javase/6/docs/api/java/lang/System.html
+        String filerepo = System.getProperty("dm4.filerepo.path");
+        if (filerepo != null && !filerepo.isEmpty()) {
+            log.info("=> Using wikidata-json dump from within dm4.filerepo \"" + filerepo + "\"");
+            return filerepo + "/";
+        }
+        String userhome = System.getProperty("user.home");
+        if (userhome != null) {
+            log.info("=> Using wikidata-json dump from within  user.home + \"" + userhome + "\"");
+            return userhome + "/";
+        }
+        return "";
+    }
+    
+    public class TimeoutException extends RuntimeException {
+
+        private static final long serialVersionUID = -1083533602730765194L;
+        
+    }
+    
+    /**
+     * A simple class that processes EntityDocuments to identify personas in the wikidatawiki.
+     */
+    class WikidataPersonaProcessor implements EntityDocumentProcessor {
+        
+        // Counters to keep track of overall numbers:
+        long countItems = 0;
+        long countProperties = 0;
+        // 
+        HashMap<String, String> itemNames = new HashMap<String, String>();
+        HashMap<String, String> persons = new HashMap<String, String>();
+        // 
+        @Override
+        public void processItemDocument(ItemDocument itemDocument) {
+            // Count items:
+            this.countItems++;
+
+            if (itemDocument.getStatementGroups().size() > 0) {
+                for (StatementGroup sg : itemDocument.getStatementGroups()) {
+                    boolean isInstanceOf = "P31".equals(sg.getProperty().getId());
+                    boolean isSubclassOf = "P279".equals(sg.getProperty().getId());
+                    // see https://www.wikidata.org/wiki/Wikidata:List_of_properties/Person
+                    boolean isMemberOf = "P463".equals(sg.getProperty().getId());
+                    boolean isCitizenOf = "P27".equals(sg.getProperty().getId());
+                    boolean isAlmaMaterOf = "P69".equals(sg.getProperty().getId());
+                    boolean isEmployeeOf = "P108".equals(sg.getProperty().getId());
+                    boolean isPartyMemberOf = "P102".equals(sg.getProperty().getId());
+                    boolean isOfficiallyResidingAt = "P263".equals(sg.getProperty().getId());
+                    boolean isStudentOf = "P1066".equals(sg.getProperty().getId());
+                    boolean isDoctoralAdvisorOf = "P184".equals(sg.getProperty().getId());
+                    boolean isDoctoralStudentOf = "P185".equals(sg.getProperty().getId());
+                    boolean isGivenNameOf = "P735".equals(sg.getProperty().getId());
+                    boolean isSurnameOf = "P734".equals(sg.getProperty().getId());
+                    boolean isPseudonymOf = "P742".equals(sg.getProperty().getId());
+                    boolean isAffiliatedWith = "P1416".equals(sg.getProperty().getId());
+                    boolean isOpenResearchIdOf = "P496".equals(sg.getProperty().getId());
+                    boolean isNotableWorkOf = "P800".equals(sg.getProperty().getId());
+                    /** if (isSubclassOf && classRecord == null) {
+                        // logger.info("Has SubclassOf Relationship.. and NO classRecord");
+                        classRecord = getClassRecord(itemDocument, itemDocument.getItemId());
+                    } **/
+                    if (isInstanceOf || isSubclassOf) {
+                        // 1 Fetching and mapping ID to English Label
+                        String itemId = itemDocument.getItemId().toString()
+                            .substring("http://www.wikidata.org/entity/".length());
+                        String label = "";
+                        if (!itemNames.containsKey(itemId)) {
+                            if (itemDocument.getLabels().size() > 1) {
+                                if (itemDocument.getLabels().get("en") != null) {
+                                    label = itemDocument.getLabels().get("en").toString();
+                                } else {
+                                    // log.warn("Item ("+itemDocument.getItemId()+") has no \"en\" label/name");
+                                }
+                            }
+                            if (!label.isEmpty()) {
+                                itemNames.put(itemId, label);
+                                // log.info("Added itemName => " + label + " (key => " + itemId + ")");
+                            }
+                        }
+                        // 2 Checking all statements if we have a name for the subject with that entityId 
+                        //   involved in the statemnt
+                        for (Statement s : sg.getStatements()) {
+                            if (s.getClaim().getMainSnak() instanceof ValueSnak) {
+                                Value value = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
+                                org.json.JSONObject valueObject = value.accept(new ValueJsonConverter());
+                                String valueType = valueObject.getJSONObject("value").getString("entity-type");
+                                if (valueType.equals("item")) {
+                                    String referencedItemId = valueObject.getJSONObject("value")
+                                        .getString("numeric-id");
+                                    // 2.1 item references wikidata item for "human" or "person"
+                                    if (referencedItemId.equals("Q5") || referencedItemId.equals("Q215627")) {
+                                        // Add english labelled person to memory
+                                        if (itemNames.get(itemId) != null) {
+                                            if (!persons.containsKey(itemId)) persons.put(itemId, label);
+                                            // log.info(itemNames.get(itemId) + " ("+itemId+") is one of " 
+                                                // + persons.size()+" human beings recorded in the wikidatawiki");
+                                        }
+                                    } else if (itemNames.containsKey(referencedItemId)) {
+                                        log.info("Item ("+itemDocument.getItemId()+") is instance of \"" 
+                                            + itemNames.get(referencedItemId) + "\"");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Print a report every 10000 items:
+            if (this.countItems % 10000 == 0) {
+                printProcessingStatus();
+            }
+        }
+
+        @Override
+        public void processPropertyDocument(PropertyDocument propertyDocument) {
+            // Count properties:
+            this.countProperties++;
+        }
+        
+        /**
+         * Prints a report about the statistics gathered so far.
+         */
+        private void printProcessingStatus() {
+            log.info("Processed " + this.countItems + " items:");
+            log.info("Identified Human beings: " + this.persons.size());
+        }
+        
     }
 
 }
