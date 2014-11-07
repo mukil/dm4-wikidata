@@ -16,9 +16,12 @@ import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.ProtocolException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
@@ -565,6 +568,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                         referencedItemEntity = getOrCreateWikidataEntity(itemId, language_code, clientState);
                     } else if (snakDataType.equals("commonsMedia")) {
                         // do relate wikidata.commons_media
+                        log.info(" --------- Commons Media Item! ------------");
                         if (snakDataValue.has("value")) {
                             String fileName = snakDataValue.getString("value");
                             referencedItemEntity = getOrCreateWikimediaCommonsMediaTopic(fileName, clientState);
@@ -574,9 +578,9 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                         // ### make use of WIKIMEDIA_COMMONS_MEDIA_FILE_URL_PREFIX and implement page-renderer
                     } else if (snakDataType.equals("globe-coordinate")) {
                         // do relate wikidata.globe_coordinate
-                        log.fine("Globe Coordinate claimed via \"" + propertyEntity.getSimpleValue()
-                                + "\" ("+language_code+") DEBUG:");
-                        log.fine("  " + snakDataValue.toString());
+                        // log.fine("Globe Coordinate claimed via \"" + propertyEntity.getSimpleValue()
+                               // + "\" ("+language_code+") DEBUG:");
+                        // log.fine("  " + snakDataValue.toString());
                     } else if (snakDataType.equals("url")) {
                         if (snakDataValue.has("value")) {
                             // ### getOrCreateWebResource()
@@ -629,9 +633,9 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                     new TopicRoleModel(one.getId(), "dm4.core.default"),
                     new TopicRoleModel(two.getId(), "dm4.core.default")), clientState);
                 claim.setUri(claim_guid);
-                log.info("Created \"Wikidata Claim\" with GUID: " + claim.getUri() +" for \"" + two.getSimpleValue() +
+                /** log.info("Created \"Wikidata Claim\" with GUID: " + claim.getUri() +" for \"" + two.getSimpleValue() +
                                 " (property: " + property.getSimpleValue() +
-                                "\") for \"" + one.getSimpleValue() + "\" - FINE");
+                                "\") for \"" + one.getSimpleValue() + "\" - FINE"); **/
                 // 2) Assign wikidata property (=Wikidata Search Entity) to this claim-edge
                 claim.setCompositeValue(new CompositeValueModel().putRef(WD_SEARCH_ENTITY_URI,
                         property.getUri()), clientState, null);
@@ -653,14 +657,14 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         try {
             textValue = dms.getTopic(WD_TEXT_TYPE_URI, new SimpleValue(value), false);
         } catch (Exception ex) {
-            log.info("Could not find a wikidata-text value topic for \"" + value + ex.getMessage() + "\"");
+            // log.info("Could not find a wikidata-text value topic for \"" + value + ex.getMessage() + "\"");
         }
         // 2) re-use  or create
         DeepaMehtaTransaction tx = dms.beginTx();
         try {
             if (textValue == null) {
                 textValue = dms.createTopic(new TopicModel(WD_TEXT_TYPE_URI, new SimpleValue(value)), clientState);
-                log.info("CREATED \"Wikidata Text\" - \"" + value +"\" (" + lang + ") - OK!");
+                // log.info("CREATED \"Wikidata Text\" - \"" + value +"\" (" + lang + ") - OK!");
             } /** else {
                 log.info("FETCHED \"Wikidata Text\" - \"" + textValue.getSimpleValue() +"\" "
                         + "(" + lang + ") - Re-using it!");
@@ -672,6 +676,82 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         } finally {
             tx.finish();
             return textValue;
+        }
+    }
+    
+    private Topic getOrCreateWikimediaCommonsMediaTopic(String fileName, ClientState clientState) {
+        Topic mediaTopic = dms.getTopic(WD_COMMONS_MEDIA_NAME_TYPE_URI, new SimpleValue(fileName), false);
+        log.info("Getting or Creating Wikimedia Commons Media Topic ------- GET");
+        if (mediaTopic == null) { // create new media topic
+            CompositeValueModel mediaCompositeModel = new CompositeValueModel().
+                put(WD_COMMONS_MEDIA_NAME_TYPE_URI, fileName);
+            enrichAboutWikimediaCommonsMetaData(mediaCompositeModel, fileName);
+            TopicModel mediaTopicModel = new TopicModel(WD_COMMONS_MEDIA_TYPE_URI, mediaCompositeModel);
+            mediaTopic = dms.createTopic(mediaTopicModel, clientState);
+            log.info("Created new Wikimedia Commons Media Topic \"" + mediaTopic.getSimpleValue().toString());
+        } else {
+            mediaTopic = mediaTopic.getRelatedTopic("dm4.core.composition", 
+                "dm4.core.child", "dm4.core.parent", WD_COMMONS_MEDIA_TYPE_URI, true, false);
+        }
+        // reference existing media topic ### here is no update mechanism yet
+        return mediaTopic;
+    }
+
+    private void enrichAboutWikimediaCommonsMetaData(CompositeValueModel model, String fileName) {
+        // 1) fetch data by name ..
+        loadWikimediaCommonsData(fileName);
+        // 2) mediaCompositeModel.put(WD_COMMONS_MEDIA_PATH_TYPE_URI, filePath);
+    }
+    
+    private String loadWikimediaCommonsData(String fileName) {
+        log.info("Loading Wikimedia Commons Meta Data ----------------- LOADING");
+        StringBuilder resultBody = new StringBuilder();
+        String xml_result = null;
+        try {
+            URL requestUri = new URL("http://tools.wmflabs.org/magnus-toolserver/commonsapi.php?image=" 
+                + URLEncoder.encode(fileName, "UTF-8"));
+            // 2) initiate request
+            log.info(requestUri.toString() + "          ----------- REQUESTING");
+            HttpURLConnection connection = (HttpURLConnection) requestUri.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("User-Agent", "DeepaMehta "+DEEPAMEHTA_VERSION+" - "
+                + "Wikidata Search " + WIKIDATA_TYPE_SEARCH_VERSION);
+            // 3) check the response
+            int httpStatusCode = connection.getResponseCode();
+            if (httpStatusCode != HttpURLConnection.HTTP_OK) {
+                log.severe("HTTP StatusCode => " + httpStatusCode);
+                throw new RuntimeException();
+            } else {
+                log.info("HTTP OK ----------------------------------- RESPONSE");
+            }
+            // 4) read in the response
+            BufferedReader rd = new BufferedReader(new InputStreamReader(connection.getInputStream(), CHARSET));
+            for (String input; (input = rd.readLine()) != null;) {
+                resultBody.append(input);
+                log.info("   => " + input);
+            }
+            rd.close();
+            log.info("  ==> ResultBody => " + resultBody.toString());
+            // 5) process response
+            if (resultBody.toString().isEmpty()) {
+                log.fine("Wikimedia Commons API Response IS ------------ EMPTY " + resultBody);
+                throw new WebApplicationException(new RuntimeException("Wikiedia Commons API was silent."),
+                    Status.NO_CONTENT);
+            } else {
+                xml_result = resultBody.toString();
+                log.fine("Wikimedia Commons API Response: " + xml_result);
+                // ### DocumentBuilder builder =  // Maybe depend on/integrate usage of jackson as xml-lib
+            }
+        } catch (MalformedURLException ex) {
+            log.warning(ex.getMessage());
+        } catch (ProtocolException ex) {
+            log.warning(ex.getMessage());
+        } catch (UnsupportedEncodingException ex) {
+            log.warning(ex.getMessage());
+        } catch (IOException ex) {
+            log.warning(ex.getMessage());
+        } finally {
+            return xml_result;
         }
     }
 
@@ -711,28 +791,6 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         if (service == acService) {
             acService = null;
         }
-    }
-
-    private Topic getOrCreateWikimediaCommonsMediaTopic(String fileName, ClientState clientState) {
-        Topic mediaTopic = dms.getTopic(WD_COMMONS_MEDIA_NAME_TYPE_URI, new SimpleValue(fileName), false);
-        if (mediaTopic == null) { // create new media topic
-            CompositeValueModel mediaCompositeModel = new CompositeValueModel().
-                put(WD_COMMONS_MEDIA_NAME_TYPE_URI, fileName);
-            // ### enrichAboutWikimediaCommonsMetaData(mediaCompositeModel, fileName);
-            TopicModel mediaTopicModel = new TopicModel(WD_COMMONS_MEDIA_TYPE_URI, mediaCompositeModel);
-            mediaTopic = dms.createTopic(mediaTopicModel, clientState);
-            log.info("Created new Wikimedia Commons Media Topic \"" + mediaTopic.getSimpleValue().toString());
-        } else {
-            mediaTopic = mediaTopic.getRelatedTopic("dm4.core.composition", 
-                "dm4.core.child", "dm4.core.parent", WD_COMMONS_MEDIA_TYPE_URI, true, false);
-        }
-        // reference existing media topic ### here is no update mechanism yet
-        return mediaTopic;
-    }
-
-    private void enrichAboutWikimediaCommonsMetaData(CompositeValueModel model, String fileName) {
-        // 1) fetch data by name from http://tools.wmflabs.org/magnus-toolserver/commonsapi.php?image=
-        // 2) mediaCompositeModel.put(WD_COMMONS_MEDIA_PATH_TYPE_URI, filePath);
     }
 
 }
