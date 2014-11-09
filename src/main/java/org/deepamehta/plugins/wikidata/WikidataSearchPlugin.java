@@ -783,14 +783,15 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             throw new RuntimeException(ex);
         }
         // Register two entity processors, the one given for persons, the other as a timer
-        dumpProcessingController.registerEntityDocumentProcessor(entityProcessor, null, ONLY_CURRENT_REVISIONS);
+        // dumpProcessingController.registerEntityDocumentProcessor(entityProcessor, null, ONLY_CURRENT_REVISIONS);
         // Also add a timer that reports some basic progress information:
         EntityTimerProcessor entityTimerProcessor = new EntityTimerProcessor(TIMEOUT_SEC);
         dumpProcessingController.registerEntityDocumentProcessor(entityTimerProcessor, null, ONLY_CURRENT_REVISIONS);
         // 
         try {
            dumpProcessingController.processMostRecentJsonDump();
-        } catch (TimeoutException e) {
+        } catch (Exception e) {
+            log.info("Wikidata Dumpfile Processer stopped -- TIMED LIMIT --");
             // The timer caused a time out. Continue and finish normally.
         }
         entityTimerProcessor.stop();
