@@ -1,6 +1,7 @@
 package org.deepamehta.plugins.wikidata;
 
 import de.deepamehta.core.model.CompositeValueModel;
+import de.deepamehta.core.model.SimpleValue;
 import de.deepamehta.core.model.TopicModel;
 import de.deepamehta.core.service.DeepaMehtaService;
 import java.util.Date;
@@ -39,6 +40,8 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
     private final String DM_INSTITUTION         = "dm4.contacts.institution";
     private final String DM_INSTITUTION_NAME    = "dm4.contacts.institution_name";
     
+    private final String DM_WEBBROWSER_URL      = "dm4.webbrowser.url";
+    
     private final String DM_NOTES               = "dm4.contacts.notes";
         
     final Timer timer = Timer.getNamedTimer("WikidataPersonaProcessor");
@@ -65,6 +68,7 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
     // 
     HashMap<String, String> all_persons = new HashMap<String, String>();
     HashMap<String, String> all_institutions = new HashMap<String, String>();
+    HashMap<String, String> all_websites = new HashMap<String, String>();
     HashMap<String, double[]> all_coordinates = new HashMap<String, double[]>();
 
     @Override
@@ -220,8 +224,12 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
                     for (Statement s : sg.getStatements()) {
                         if (s.getClaim().getMainSnak() instanceof ValueSnak) {
                             Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
-                            JSONObject valueObject = mainSnakValue.accept(new ValueJsonConverter()).getJSONObject("value");
-                            log.info("Items officla website is at \"" + valueObject + "\"");
+                            if (mainSnakValue.accept(new ValueJsonConverter()).has("value")) {
+                                String url = mainSnakValue.accept(new ValueJsonConverter()).getString("value");
+                                if ((url != null && !url.isEmpty())) {
+                                    all_websites.put(itemId, url);
+                                }
+                            }
                         }
                     }
                 }
@@ -247,18 +255,25 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
             }
         }
         if (value == null) {
-            log.warning("could not find ANY label for item, default_label is NULL!");
+            log.warning("could not find ANY label for item (" 
+                + itemDocument.getEntityId().getId() + ") default_label is NULL!");
             return null;
         }
         return value.getText();
     }
     
+    // ### getOrCreate // perform existence check by entity-id
     private void createPersonTopic(String firstName, String lastName, String itemId) {
         CompositeValueModel personComposite = new CompositeValueModel();
         personComposite.put(DM_PERSON_NAME, new CompositeValueModel()
             .put(DM_PERSON_FIRST_NAME, firstName)
             .put(DM_PERSON_LAST_NAME, lastName)
         );
+        // add "official" website to institution if available
+        if (all_websites.containsKey(itemId)) {
+            personComposite.add(DM_WEBBROWSER_URL, 
+                new TopicModel(DM_WEBBROWSER_URL, new SimpleValue(all_websites.get(itemId))));
+        }
         // personComposite.put(DM_NOTES, new SimpleValue("<p><a href=\"http://www.wikidata.org./entity/"+itemId+"\"></a></p>"));
         TopicModel personModel = new TopicModel(
             WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_PERSON, personComposite);
@@ -266,9 +281,16 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
         // log.info("> Created person Topic: " + firstName + " " + lastName);
     }
 
+    // ### getOrCreate // perform existence check by entity-id
+    // Crashes for: org.wikidata.entity.Q20718
     private void createInstitutionTopic(String name, String itemId) {
         CompositeValueModel institutionComposite = new CompositeValueModel();
         institutionComposite.put(DM_INSTITUTION_NAME, name);
+        if (all_websites.containsKey(itemId)) {
+            institutionComposite.add(DM_WEBBROWSER_URL, 
+                new TopicModel(DM_WEBBROWSER_URL, new SimpleValue(all_websites.get(itemId))));
+        }
+        // add "official" website to institution if available
         TopicModel institutionModel = new TopicModel(
             WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_INSTITUTION, institutionComposite);
         // ### set GeoCoordinate Facet via values in all_coordinates
@@ -321,7 +343,7 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
         
         printProcessingStatus();
         
-        log.info("Start importing topics ...");
+        log.info("Start creating Topics ...");
         
         for (String itemId : all_persons.keySet()) { // this might work but only after having read in the complete dump
             String fullName = itemsFirstLabel.get(itemId);
@@ -338,7 +360,7 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
             String instName = itemsFirstLabel.get(itemId);
             if (instName != null) createInstitutionTopic(instName, itemId);
         }
-
+        
         log.info("Finished processing.");
         this.timer.stop();
         this.lastSeconds = (int) (timer.getTotalWallTime() / 1000000000);

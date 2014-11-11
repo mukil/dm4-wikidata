@@ -386,7 +386,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     @Override
     public void init() {
         // Delete all "Person"-Topics
-        /** for (RelatedTopic person : dms.getTopics("dm4.contacts.person", false, 0)){
+        for (RelatedTopic person : dms.getTopics("dm4.contacts.person", false, 0)){
             dms.deleteTopic(person.getId());
         }
         // Delete all "Institution"-Topics
@@ -394,7 +394,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             dms.deleteTopic(institution.getId());
         }
         // Start importing "Person"-Topcis from WD
-        importWikidataPersonas(); **/
+        importWikidataPersonas();
     }
 
     
