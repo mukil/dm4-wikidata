@@ -28,6 +28,11 @@
             <version>4.3</version>
         </dependency>
         <dependency>
+            <groupId>de.deepamehta</groupId>
+            <artifactId>deepamehta-contacts</artifactId>
+            <version>4.3</version>
+        </dependency>
+        <dependency>
             <groupId>org.wikidata.wdtk</groupId>
             <artifactId>wdtk-dumpfiles</artifactId>
             <version>0.3.0</version>
