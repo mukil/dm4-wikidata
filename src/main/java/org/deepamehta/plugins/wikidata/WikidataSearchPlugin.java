@@ -103,6 +103,25 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             + "&props=info%7Csitelinks%2Furls%7Caliases%7Clabels%7Cdescriptions&dir=ascending&format=json";
     private final String WD_SEARCH_ENTITY_TYPE_PROPERTY = "property";
     private final String WD_SEARCH_ENTITY_TYPE_ITEM = "item";
+    
+    // --- Wikidata Toolkit Dumpfile Importer Settings
+    
+    /**
+     * If set to true, all example programs will run in offline mode. Only data
+     * dumps that have been downloaded in previous runs will be used.
+     */
+    final boolean OFFLINE_MODE = false;
+
+    /**
+     * Timeout to abort processing after a short while or 0 to disable timeout.
+     * If set, then the processing will cleanly exit after about this many
+     * seconds, as if the dump file would have ended there. This is useful for
+     * testing (and in particular better than just aborting the program) since
+     * it allows for final processing and proper closing to happen without
+     * having to wait for a whole dump file to process.
+     */
+    final int TIMEOUT_SEC = 10;
+
 
     // --- Instance Variables
 
@@ -110,8 +129,6 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     private final String WIKIDATA_PROPERTY_ENTITY_URL_PREFIX = "Property:";
     private final String WIKIMEDIA_COMMONS_MEDIA_FILE_URL_PREFIX = "//commons.wikimedia.org/wiki/File:";
     
-    private final int TIMEOUT_SEC = 5; // Time the global Wikidata JSON dump is processed on import
-
     private boolean isInitialized = false;
     private AccessControlService acService = null;
     
@@ -784,9 +801,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
      * in this dump
      */
     private void processEntitiesFromWikidataDump(WikidataPersonaProcessor entityProcessor) {
-        // Importer settings
-        boolean OFFLINE_MODE = false;
-        boolean ONLY_CURRENT_REVISIONS = false;
+        
         // Controller object for processing dumps:
         DumpProcessingController dumpProcessingController = new DumpProcessingController("wikidatawiki");
         dumpProcessingController.setOfflineMode(OFFLINE_MODE);
@@ -798,8 +813,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
-        // Register two entity processors, the one given for persons, the other as a timer
-        dumpProcessingController.registerEntityDocumentProcessor(entityProcessor, null, ONLY_CURRENT_REVISIONS);
+        dumpProcessingController.registerEntityDocumentProcessor(entityProcessor, null, false);
         try {
            dumpProcessingController.processMostRecentJsonDump();
         } catch (Exception e) {

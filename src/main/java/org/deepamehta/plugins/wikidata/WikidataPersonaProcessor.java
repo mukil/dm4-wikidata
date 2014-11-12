@@ -70,6 +70,7 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
     HashMap<String, String> itemsBirthDate = new HashMap<String, String>();
     HashMap<String, String> itemsGivenname = new HashMap<String, String>();
     HashMap<String, String> itemsSurname = new HashMap<String, String>();
+    HashMap<String, String> itemsFirstDescription = new HashMap<String, String>();
     // 
     HashMap<String, String> all_persons = new HashMap<String, String>();
     HashMap<String, String> all_institutions = new HashMap<String, String>();
@@ -86,8 +87,10 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
         // 0) Get english label of current item
         String itemId = itemDocument.getEntityId().getId();
         String label = getFirstLabel(itemDocument);
+        String description = getFirstDescription(itemDocument);
         // .. Memorizing any items english label in instance-variable
         if (label != null && !label.isEmpty()) itemsFirstLabel.put(itemId, label);
+        if (description != null && !description.isEmpty()) itemsFirstDescription.put(itemId, description);
 
         // 1) Iterate over statement groups 
         if (itemDocument.getStatementGroups().size() > 0) {
@@ -284,14 +287,33 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
             }
         }
         if (value == null) {
-            log.warning("Could not find ANY label for item (" 
-                + itemDocument.getEntityId().getId() + ", label=NULL)! --- Skippin Entry");
+            log.fine("Could not find ANY label for item (" 
+                + itemDocument.getEntityId().getId() + ", label=NULL)!");
             return null;
         }
         return value.getText();
     }
     
-    // ### getOrCreate // perform existence check by entity-id
+    private String getFirstDescription(ItemDocument itemDocument) {
+        MonolingualTextValue value = null;
+        if (itemDocument.getLabels().size() > 1) {
+            if (itemDocument.getDescriptions().containsKey(WikidataEntityMap.LANG_EN)) {
+                value = itemDocument.getDescriptions().get(WikidataEntityMap.LANG_EN);
+            } else { // if no english label avaiable, take first label available
+                for (String key : itemDocument.getDescriptions().keySet()) {
+                    value = itemDocument.getDescriptions().get(key);
+                    break;
+                }
+            }
+        }
+        if (value == null) {
+            log.fine("Could not find ANY description for item (" 
+               + itemDocument.getEntityId().getId() + ", label=NULL)! --- Skippin Description");
+            return null;
+        }
+        return value.getText();
+    }
+    
     private void createPersonTopic(String firstName, String lastName, String itemId) {
         if (!alreadyExists(itemId)) {
             CompositeValueModel personComposite = new CompositeValueModel();
@@ -304,17 +326,20 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
                 personComposite.add(DM_WEBBROWSER_URL, 
                     new TopicModel(DM_WEBBROWSER_URL, new SimpleValue(all_websites.get(itemId))));
             }
-            // personComposite.put(DM_NOTES, new SimpleValue("<p><a href=\"http://www.wikidata.org./entity/"+itemId+"\"></a></p>"));
+            String desc = "";
+            if (itemsFirstDescription.get(itemId) != null) {
+                desc = "<p>"+itemsFirstDescription.get(itemId)+"</p>";
+            }
+            personComposite.put(DM_NOTES, desc + "<p>For more information you can visit "
+                + "this items <a href=\"http://www.wikidata.org./entity/" + itemId 
+                + "\" title=\"Wikidata page for this item\">wikidata page</a>.</p>");
             TopicModel personModel = new TopicModel(
                 WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_PERSON, personComposite);
             dms.createTopic(personModel, null);
             // log.info("> Created person Topic: " + firstName + " " + lastName);
-            
         }
     }
 
-    // ### getOrCreate // perform existence check by entity-id
-    // Crashes for: org.wikidata.entity.Q20718, org.wikidata.entity.Q50838
     private void createInstitutionTopic(String name, String itemId) {
         if (!alreadyExists(itemId)) {
             CompositeValueModel institutionComposite = new CompositeValueModel();
@@ -324,6 +349,13 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
                     new TopicModel(DM_WEBBROWSER_URL, new SimpleValue(all_websites.get(itemId))));
             }
             // add "official" website to institution if available
+            String desc = "";
+            if (itemsFirstDescription.get(itemId) != null) {
+                desc = "<p>"+itemsFirstDescription.get(itemId)+"</p>";
+            }
+            institutionComposite.put(DM_NOTES, desc + "<p>For more information you can visit "
+                + "this items <a href=\"http://www.wikidata.org./entity/" + itemId 
+                + "\" title=\"Wikidata page for this item\">wikidata page</a>.</p>");
             TopicModel institutionModel = new TopicModel(
                 WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_INSTITUTION, institutionComposite);
             // ### set GeoCoordinate Facet via values in all_coordinates
@@ -331,7 +363,6 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
         }
     }
     
-    // ### getOrCreate // perform existence check by entity-id
     private void createCityTopic(String name, String itemId) {
         if (!alreadyExists(itemId)) {
             TopicModel cityModel = new TopicModel(
@@ -341,7 +372,6 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
         }
     }
     
-    // ### getOrCreate // perform existence check by entity-id
     private void createCountryTopic(String name, String itemId) {
         if (!alreadyExists(itemId)) {
             TopicModel countryModel = new TopicModel(
@@ -368,7 +398,7 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
      * Prints a report about the statistics gathered so far.
      */
     private void printProcessingStatus() {
-        log.info("Processed " + this.entityCount + " items.");
+        log.info("Processed " + this.entityCount + " items from the wikidata json-dump.");
         log.info("Identified " + this.all_persons.size() + " human beings"
             + ", " + this.all_institutions.size() + " institutions, "
             + this.all_cities.size() + " cities and " 
@@ -434,7 +464,7 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
                 String lastName = fullName.split(" ")[fullName.split(" ").length-1];
                 createPersonTopic(firstName, lastName, itemId);   
             } else {
-                log.warning("Person Topic ("+itemId+") NOT created because label value ends up being NULL!");
+                log.warning("Person Topic ("+itemId+") NOT created (no label value found!) --- Skippin Entry");
             }
         }
 
