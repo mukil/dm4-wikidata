@@ -110,12 +110,26 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     private final String WIKIDATA_PROPERTY_ENTITY_URL_PREFIX = "Property:";
     private final String WIKIMEDIA_COMMONS_MEDIA_FILE_URL_PREFIX = "//commons.wikimedia.org/wiki/File:";
     
-    private final int TIMEOUT_SEC = 2; // Time the global Wikidata JSON dump is processed on import
+    private final int TIMEOUT_SEC = 5; // Time the global Wikidata JSON dump is processed on import
 
     private boolean isInitialized = false;
     private AccessControlService acService = null;
-
-
+    
+    
+    
+    @Override
+    public void init() {
+        // Delete all "Person"-Topics
+        /** for (RelatedTopic person : dms.getTopics("dm4.contacts.person", false, 0)){
+            dms.deleteTopic(person.getId());
+        }
+        // Delete all "Institution"-Topics
+        for (RelatedTopic institution : dms.getTopics("dm4.contacts.institution", false, 0)){
+            dms.deleteTopic(institution.getId());
+        }
+        // Start importing "Person"-Topcis from WD
+        importWikidataPersonas(); **/
+    }
 
     @GET
     @Path("/search/{entity}/{query}/{language_code}")
@@ -379,24 +393,11 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     @Path("/import/humans")
     @Produces(MediaType.TEXT_PLAIN)
     public String processPersonsFromWikidataDump() {
+        // Start importing "Person"-Topcis from WD
         importWikidataPersonas();
         return "OK";
     }
     
-    @Override
-    public void init() {
-        // Delete all "Person"-Topics
-        for (RelatedTopic person : dms.getTopics("dm4.contacts.person", false, 0)){
-            dms.deleteTopic(person.getId());
-        }
-        // Delete all "Institution"-Topics
-        for (RelatedTopic institution : dms.getTopics("dm4.contacts.institution", false, 0)){
-            dms.deleteTopic(institution.getId());
-        }
-        // Start importing "Person"-Topcis from WD
-        importWikidataPersonas();
-    }
-
     
 
     // --
@@ -802,16 +803,10 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         try {
            dumpProcessingController.processMostRecentJsonDump();
         } catch (Exception e) {
-            log.severe("Exception of type " + e.getClass() + " caught silent!");
+            log.warning("Exception of type " + e.getClass() + " caught silent!");
             // The timer caused a time out. Continue and finish normally.
         }
         entityProcessor.stop();
-        ResultList<RelatedTopic> personas = dms.getTopics("dm4.contacts.person", false, 0);
-        ResultList<RelatedTopic> institutions = dms.getTopics("dm4.contacts.institution", false, 0);
-        if (personas != null) {
-            log.info("Imported " + personas.getSize() + " personas and " 
-                + institutions.getSize() + " institutions from wikidata.org");
-        }
     }
     
     private String findDumpDirectoryPath() {

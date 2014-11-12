@@ -1,10 +1,12 @@
 package org.deepamehta.plugins.wikidata;
 
+import de.deepamehta.core.RelatedTopic;
+import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.CompositeValueModel;
 import de.deepamehta.core.model.SimpleValue;
 import de.deepamehta.core.model.TopicModel;
 import de.deepamehta.core.service.DeepaMehtaService;
-import java.util.Date;
+import de.deepamehta.core.service.ResultList;
 import java.util.HashMap;
 import java.util.logging.Logger;
 import org.json.JSONObject;
@@ -16,7 +18,6 @@ import org.wikidata.wdtk.datamodel.interfaces.Statement;
 import org.wikidata.wdtk.datamodel.interfaces.StatementGroup;
 import org.wikidata.wdtk.datamodel.interfaces.Value;
 import org.wikidata.wdtk.datamodel.interfaces.ValueSnak;
-import org.wikidata.wdtk.datamodel.interfaces.ValueVisitor;
 import org.wikidata.wdtk.datamodel.json.ValueJsonConverter;
 import org.wikidata.wdtk.util.Timer;
 
@@ -39,6 +40,10 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
     
     private final String DM_INSTITUTION         = "dm4.contacts.institution";
     private final String DM_INSTITUTION_NAME    = "dm4.contacts.institution_name";
+    
+    private final String DM_CITY                = "dm4.contacts.city";
+    
+    private final String DM_COUNTRY             = "dm4.contacts.country";
     
     private final String DM_WEBBROWSER_URL      = "dm4.webbrowser.url";
     
@@ -68,6 +73,8 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
     // 
     HashMap<String, String> all_persons = new HashMap<String, String>();
     HashMap<String, String> all_institutions = new HashMap<String, String>();
+    HashMap<String, String> all_cities = new HashMap<String, String>();
+    HashMap<String, String> all_countries = new HashMap<String, String>();
     HashMap<String, String> all_websites = new HashMap<String, String>();
     HashMap<String, double[]> all_coordinates = new HashMap<String, double[]>();
 
@@ -152,7 +159,29 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
                                         // .. keep a reference to institution items for counting (the one which has an english label)
                                         all_institutions.put(itemId, label);
                                     }
+
+                                // 2.3 current wikidata item is direct instanceOf|subclassOf "city", "metro" or "capital"
+                                } else if (referencedItemId.equals(WikidataEntityMap.CITY_ITEM)
+                                    || referencedItemId.equals(WikidataEntityMap.METROPOLIS_ITEM)
+                                    || referencedItemId.equals(WikidataEntityMap.CAPITAL_CITY_ITEM)) {
+                                    
+                                    // ### store item as being of some sort of "city"
+                                    if (!all_cities.containsKey(itemId)) { // no organisation available
+                                        // .. keep a reference to city items for counting (the one which has an english label)
+                                        all_cities.put(itemId, label);
+                                    }
+
+                                // 2.4 current wikidata item is direct instanceOf|subclassOf "country" or "sovereing state"
+                                } else if (referencedItemId.equals(WikidataEntityMap.COUNTRY_ITEM)
+                                    || referencedItemId.equals(WikidataEntityMap.SOVEREIGN_STATE_ITEM)) {
+                                    
+                                    // ### store item as being of some sort of "country"
+                                    if (!all_countries.containsKey(itemId)) { // no organisation available
+                                        // .. keep a reference to country items for counting (the one which has an english label)
+                                        all_countries.put(itemId, label);
+                                    }
                                 }
+
                             }
                         }
                     }
@@ -255,8 +284,8 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
             }
         }
         if (value == null) {
-            log.warning("could not find ANY label for item (" 
-                + itemDocument.getEntityId().getId() + ") default_label is NULL!");
+            log.warning("Could not find ANY label for item (" 
+                + itemDocument.getEntityId().getId() + ", label=NULL)! --- Skippin Entry");
             return null;
         }
         return value.getText();
@@ -264,37 +293,69 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
     
     // ### getOrCreate // perform existence check by entity-id
     private void createPersonTopic(String firstName, String lastName, String itemId) {
-        CompositeValueModel personComposite = new CompositeValueModel();
-        personComposite.put(DM_PERSON_NAME, new CompositeValueModel()
-            .put(DM_PERSON_FIRST_NAME, firstName)
-            .put(DM_PERSON_LAST_NAME, lastName)
-        );
-        // add "official" website to institution if available
-        if (all_websites.containsKey(itemId)) {
-            personComposite.add(DM_WEBBROWSER_URL, 
-                new TopicModel(DM_WEBBROWSER_URL, new SimpleValue(all_websites.get(itemId))));
+        if (!alreadyExists(itemId)) {
+            CompositeValueModel personComposite = new CompositeValueModel();
+            personComposite.put(DM_PERSON_NAME, new CompositeValueModel()
+                .put(DM_PERSON_FIRST_NAME, firstName)
+                .put(DM_PERSON_LAST_NAME, lastName)
+            );
+            // add "official" website to institution if available
+            if (all_websites.containsKey(itemId)) {
+                personComposite.add(DM_WEBBROWSER_URL, 
+                    new TopicModel(DM_WEBBROWSER_URL, new SimpleValue(all_websites.get(itemId))));
+            }
+            // personComposite.put(DM_NOTES, new SimpleValue("<p><a href=\"http://www.wikidata.org./entity/"+itemId+"\"></a></p>"));
+            TopicModel personModel = new TopicModel(
+                WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_PERSON, personComposite);
+            dms.createTopic(personModel, null);
+            // log.info("> Created person Topic: " + firstName + " " + lastName);
+            
         }
-        // personComposite.put(DM_NOTES, new SimpleValue("<p><a href=\"http://www.wikidata.org./entity/"+itemId+"\"></a></p>"));
-        TopicModel personModel = new TopicModel(
-            WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_PERSON, personComposite);
-        dms.createTopic(personModel, null);
-        // log.info("> Created person Topic: " + firstName + " " + lastName);
     }
 
     // ### getOrCreate // perform existence check by entity-id
-    // Crashes for: org.wikidata.entity.Q20718
+    // Crashes for: org.wikidata.entity.Q20718, org.wikidata.entity.Q50838
     private void createInstitutionTopic(String name, String itemId) {
-        CompositeValueModel institutionComposite = new CompositeValueModel();
-        institutionComposite.put(DM_INSTITUTION_NAME, name);
-        if (all_websites.containsKey(itemId)) {
-            institutionComposite.add(DM_WEBBROWSER_URL, 
-                new TopicModel(DM_WEBBROWSER_URL, new SimpleValue(all_websites.get(itemId))));
+        if (!alreadyExists(itemId)) {
+            CompositeValueModel institutionComposite = new CompositeValueModel();
+            institutionComposite.put(DM_INSTITUTION_NAME, name);
+            if (all_websites.containsKey(itemId)) {
+                institutionComposite.add(DM_WEBBROWSER_URL, 
+                    new TopicModel(DM_WEBBROWSER_URL, new SimpleValue(all_websites.get(itemId))));
+            }
+            // add "official" website to institution if available
+            TopicModel institutionModel = new TopicModel(
+                WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_INSTITUTION, institutionComposite);
+            // ### set GeoCoordinate Facet via values in all_coordinates
+            dms.createTopic(institutionModel, null);
         }
-        // add "official" website to institution if available
-        TopicModel institutionModel = new TopicModel(
-            WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_INSTITUTION, institutionComposite);
-        // ### set GeoCoordinate Facet via values in all_coordinates
-        dms.createTopic(institutionModel, null);
+    }
+    
+    // ### getOrCreate // perform existence check by entity-id
+    private void createCityTopic(String name, String itemId) {
+        if (!alreadyExists(itemId)) {
+            TopicModel cityModel = new TopicModel(
+                WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_CITY, new SimpleValue(name));
+            // ### set GeoCoordinate Facet via values in all_coordinates
+            dms.createTopic(cityModel, null);
+        }
+    }
+    
+    // ### getOrCreate // perform existence check by entity-id
+    private void createCountryTopic(String name, String itemId) {
+        if (!alreadyExists(itemId)) {
+            TopicModel countryModel = new TopicModel(
+                WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_COUNTRY, new SimpleValue(name));
+            // ### set GeoCoordinate Facet via values in all_coordinates
+            dms.createTopic(countryModel, null);
+        }
+    }
+    
+    private boolean alreadyExists (String wikidataItemId) {
+        String uri = WikidataEntityMap.WD_ENTITY_BASE_URI + wikidataItemId;
+        Topic entity = dms.getTopic("uri", new SimpleValue(uri), false);
+        if (entity == null) return false;
+        return true;
     }
 
     @Override
@@ -308,8 +369,10 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
      */
     private void printProcessingStatus() {
         log.info("Processed " + this.entityCount + " items.");
-        log.info("Identified " + this.all_persons.size() + " human beings "
-            + "and " + this.all_institutions.size() + " institutions.");
+        log.info("Identified " + this.all_persons.size() + " human beings"
+            + ", " + this.all_institutions.size() + " institutions, "
+            + this.all_cities.size() + " cities and " 
+            + this.all_countries.size() + " countries.");
     }
 
     /**
@@ -345,26 +408,49 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
         
         log.info("Start creating Topics ...");
         
+        log.info("... " + all_cities.size() + " cities");
+        for (String itemId : all_cities.keySet()) {
+            String cityName = itemsFirstLabel.get(itemId); // ### all_cities
+            if (cityName != null) createCityTopic(cityName, itemId);
+        }
+
+        log.info("... " + all_countries.size() + " countries");
+        for (String itemId : all_countries.keySet()) {
+            String countryName = itemsFirstLabel.get(itemId); // ### all_countries
+            if (countryName != null) createCountryTopic(countryName, itemId);
+        }
+        
+        log.info("... " + all_institutions.size() + " institutions");
+        for (String itemId : all_institutions.keySet()) {
+            String instName = itemsFirstLabel.get(itemId); // ### all_institutions
+            if (instName != null) createInstitutionTopic(instName, itemId);
+        }
+        
+        log.info("... " + all_persons.size() + " persons");
         for (String itemId : all_persons.keySet()) { // this might work but only after having read in the complete dump
-            String fullName = itemsFirstLabel.get(itemId);
+            String fullName = itemsFirstLabel.get(itemId); // ### use all_institutions
             if (fullName != null) {
                 String firstName = fullName.split(" ")[0]; // ### import full name
                 String lastName = fullName.split(" ")[fullName.split(" ").length-1];
                 createPersonTopic(firstName, lastName, itemId);   
             } else {
-                log.warning("Person Topic ("+itemId+") NOT created because value of Fullname ends up being NULL!");
+                log.warning("Person Topic ("+itemId+") NOT created because label value ends up being NULL!");
             }
         }
-        
-        for (String itemId : all_institutions.keySet()) { // this might work but only after having read in the complete dump
-            String instName = itemsFirstLabel.get(itemId);
-            if (instName != null) createInstitutionTopic(instName, itemId);
+
+        ResultList<RelatedTopic> personas = dms.getTopics("dm4.contacts.person", false, 0);
+        ResultList<RelatedTopic> institutions = dms.getTopics("dm4.contacts.institution", false, 0);
+        ResultList<RelatedTopic> cities = dms.getTopics("dm4.contacts.city", false, 0);
+        ResultList<RelatedTopic> countries = dms.getTopics("dm4.contacts.country", false, 0);
+        if (personas != null && institutions != null && cities != null && countries != null) {
+            log.info("DeepaMehta now recognizes " + this.all_persons.size() + " human beings"
+                + ", " + this.all_institutions.size() + " institutions, "
+                + this.all_cities.size() + " cities and " 
+                + this.all_countries.size() + " countries by name.");
         }
-        
-        log.info("Finished processing.");
+        log.info("Finished importing.");
         this.timer.stop();
         this.lastSeconds = (int) (timer.getTotalWallTime() / 1000000000);
-        printProcessingStatus();
     }
 
     private void startTimer() {
