@@ -37,18 +37,13 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
     private final String DM_PERSON_NAME         = "dm4.contacts.person_name";
     private final String DM_PERSON_FIRST_NAME   = "dm4.contacts.first_name";
     private final String DM_PERSON_LAST_NAME    = "dm4.contacts.last_name";
-    
     private final String DM_INSTITUTION         = "dm4.contacts.institution";
     private final String DM_INSTITUTION_NAME    = "dm4.contacts.institution_name";
-    
     private final String DM_CITY                = "dm4.contacts.city";
-    
     private final String DM_COUNTRY             = "dm4.contacts.country";
-    
     private final String DM_WEBBROWSER_URL      = "dm4.webbrowser.url";
-    
     private final String DM_NOTES               = "dm4.contacts.notes";
-        
+
     final Timer timer = Timer.getNamedTimer("WikidataPersonaProcessor");
     final int timeout;
     int lastSeconds = 0;
@@ -64,7 +59,6 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
 
     // globally collect some label for every item processed.. (note: in memory!)
     HashMap<String, String> itemsFirstLabel = new HashMap<String, String>();
-    
     // collecting some more specific text values on each item (note: in memory!)
     HashMap<String, String> itemsDeathDate = new HashMap<String, String>();
     HashMap<String, String> itemsBirthDate = new HashMap<String, String>();
