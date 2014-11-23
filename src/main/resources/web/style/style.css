@@ -119,4 +119,12 @@ div.wikidata-query-info {
     top: 10px;
 }
 
+p.wd-item-footer {
+    color: #484848;
+}
+
+p.wd-item-footer a:link {
+    color: #006699;
+}
+
 /** blue: #006699; green: 339966; red: 990000; grey: 484848; */

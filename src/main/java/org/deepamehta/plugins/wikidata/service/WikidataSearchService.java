@@ -57,5 +57,7 @@ public interface WikidataSearchService extends PluginService {
      *  @param {id}              \"Wikidata Search Entity\"-Topic ID (entity-type must be of value "property")
      */
     List<RelatedAssociation> getTopicRelatedAssociations(long topicId);
+    
+    void assignToWikidataWorkspace(Topic topic);
 
 }

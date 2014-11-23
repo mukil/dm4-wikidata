@@ -10,7 +10,6 @@ import de.deepamehta.core.model.*;
 import de.deepamehta.core.osgi.PluginActivator;
 import de.deepamehta.core.service.ClientState;
 import de.deepamehta.core.service.PluginService;
-import de.deepamehta.core.service.ResultList;
 import de.deepamehta.core.service.annotation.ConsumesService;
 import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
 import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
@@ -43,7 +42,7 @@ import org.wikidata.wdtk.dumpfiles.DumpProcessingController;
  *
  * @author Malte Reißig (<malte@mikromedia.de>)
  * @website https://github.com/mukil/dm4-wikidata
- * @version 0.0.3-SNAPSHOT
+ * @version 0.0.4-SNAPSHOT
  */
 
 @Path("/wikidata")
@@ -120,7 +119,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
      * it allows for final processing and proper closing to happen without
      * having to wait for a whole dump file to process.
      */
-    final int TIMEOUT_SEC = 10;
+    final int TIMEOUT_SEC = 2;
 
 
     // --- Instance Variables
@@ -136,16 +135,8 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     
     @Override
     public void init() {
-        // Delete all "Person"-Topics
-        /** for (RelatedTopic person : dms.getTopics("dm4.contacts.person", false, 0)){
-            dms.deleteTopic(person.getId());
-        }
-        // Delete all "Institution"-Topics
-        for (RelatedTopic institution : dms.getTopics("dm4.contacts.institution", false, 0)){
-            dms.deleteTopic(institution.getId());
-        }
-        // Start importing "Person"-Topcis from WD
-        importWikidataPersonas(); **/
+        // deleteAllWikidataTopics();
+        // importWikidataPersonas();
     }
 
     @GET
@@ -415,6 +406,38 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         return "OK";
     }
     
+    @GET
+    @Path("/delete/topics")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String deleteAllWikidataTopics() {
+        // Delete all "Person" Topics
+        for (RelatedTopic person : dms.getTopics("dm4.contacts.person", false, 0)){
+            if (person.getUri().startsWith(WikidataEntityMap.WD_ENTITY_BASE_URI)) {
+                dms.deleteTopic(person.getId());
+            }
+        }
+        // Delete all "Institution"-Topics
+        for (RelatedTopic institution : dms.getTopics("dm4.contacts.institution", false, 0)){
+            if (institution.getUri().startsWith(WikidataEntityMap.WD_ENTITY_BASE_URI)) {
+            dms.deleteTopic(institution.getId());
+            }
+        }
+        return "OK";
+    }
+    
+    @Override
+    public void assignToWikidataWorkspace(Topic topic) {
+        if (topic == null) {
+            log.warning("Assignment of null to Wikidata workspace -- SKIPPED");
+            return;
+        }
+        // fixme: remove assignment of type to other (selected via clientState) workspace
+        Topic defaultWorkspace = dms.getTopic("uri", new SimpleValue(WS_WIKIDATA_URI), false);
+        dms.createAssociation(new AssociationModel("dm4.core.aggregation",
+            new TopicRoleModel(topic.getId(), "dm4.core.parent"),
+            new TopicRoleModel(defaultWorkspace.getId(), "dm4.core.child")
+        ), null);
+    }
     
 
     // --
@@ -575,7 +598,6 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         }
     }
 
-
     private void processWikidataClaims(String json_result, Topic wikidataItem, String language_code,
             ClientState clientState) {
         try {
@@ -732,15 +754,6 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         return (results.size() > 0) ? true : false;
     }
 
-    private void assignToWikidataWorkspace(Topic topic) {
-        // fixme: remove assignment of type to other (selected via clientState) workspace
-        Topic defaultWorkspace = dms.getTopic("uri", new SimpleValue(WS_WIKIDATA_URI), false);
-        dms.createAssociation(new AssociationModel("dm4.core.aggregation",
-            new TopicRoleModel(topic.getId(), "dm4.core.parent"),
-            new TopicRoleModel(defaultWorkspace.getId(), "dm4.core.child")
-        ), null);
-    }
-
     /** --- Implementing PluginService Interfaces to consume AccessControlService --- */
 
     @Override
@@ -788,7 +801,8 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     // --
         
     private void importWikidataPersonas() {
-        WikidataPersonaProcessor wikidataPersonaProcessor = new WikidataPersonaProcessor(dms, TIMEOUT_SEC);
+        WikidataPersonaProcessor wikidataPersonaProcessor = 
+            new WikidataPersonaProcessor(dms, this, TIMEOUT_SEC);
         processEntitiesFromWikidataDump(wikidataPersonaProcessor);
     }
     
