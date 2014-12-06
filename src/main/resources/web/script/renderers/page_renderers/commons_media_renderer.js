@@ -13,15 +13,15 @@
 
         render_page: function(topic) {
 
-            console.log("Commons Media Item")
-            console.log(topic)
+            console.log("Commons Media Item - Not yet implemented")
+            // console.log(topic)
 
             render('<div class="field-label">Wikidata Commons Media</div>')
             render('<div class="wikidata-query-info">\"'+ topic.value + '\"</div>')
 
             /* var image_path = ""
-            if (topic.composite.hasOwnProperty('org.deepamehta.wikidata.commons_media_path')) {
-                image_path = topic.composite['org.deepamehta.wikidata.commons_media_path'].value
+            if (topic.childs.hasOwnProperty('org.deepamehta.wikidata.commons_media_path')) {
+                image_path = topic.childs['org.deepamehta.wikidata.commons_media_path'].value
                 render('<img src="http://'+image_path+'" title="Wikimedia Commons Item '+topic.value+'" />')
             } **/
 

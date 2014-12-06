@@ -14,11 +14,10 @@
         render_page: function(topic) {
 
             var search_query = topic.value
-            // var search_language = topic.composite['org.deepamehta.wikidata.language'].value
-            // var search_entities = topic.composite['org.deepamehta.wikidata.search_entity']
-            // ### render data-license http://creativecommons.org/publicdomain/zero/1.0/
+            // var search_language = topic.childs['org.deepamehta.wikidata.language'].value
+            // var search_entities = topic.childs['org.deepamehta.wikidata.search_entity']
 
-            var wikidata_type = topic.composite["org.deepamehta.wikidata.search_entity_type"].value
+            var wikidata_type = topic.childs["org.deepamehta.wikidata.search_entity_type"].value
 
             if (wikidata_type === "item") {                                           // --  Wikidata Item Renderer ---
 
@@ -26,15 +25,15 @@
                 render('<div class="wikidata-query-info">\"'+ search_query + '\"</div>')
 
                 var entity_description = ""
-                if (topic.composite.hasOwnProperty('org.deepamehta.wikidata.search_entity_description')) {
-                    entity_description = topic.composite['org.deepamehta.wikidata.search_entity_description'].value
+                if (topic.childs.hasOwnProperty('org.deepamehta.wikidata.search_entity_description')) {
+                    entity_description = topic.childs['org.deepamehta.wikidata.search_entity_description'].value
                 }
                 render('<div class="field-label">Wikidata Item Description</div>')
                 render('<div class="field-value">'+entity_description+'</div>')
-                // var entity_url = result_item.composite['org.deepamehta.wikidata.search_entity_alias']
+                // var entity_url = result_item.childs['org.deepamehta.wikidata.search_entity_alias']
                 var alias_names = ""
-                if (topic.composite.hasOwnProperty('org.deepamehta.wikidata.search_entity_alias')) {
-                    var aliases = topic.composite['org.deepamehta.wikidata.search_entity_alias']
+                if (topic.childs.hasOwnProperty('org.deepamehta.wikidata.search_entity_alias')) {
+                    var aliases = topic.childs['org.deepamehta.wikidata.search_entity_alias']
                     for (var k=0; k < aliases.length; k++) {
                         if (k > 1) alias_names += ', '
                         alias_names += aliases[k].value
@@ -48,7 +47,7 @@
                 var related_properties = []
                 var otherwise_related_topics = []
                 // fetch all related topics (with their relating assoc)
-                var related_topics = dm4c.restc.get_topic_related_topics(topic.id).items
+                var related_topics = dm4c.restc.get_topic_related_topics(topic.id).items // ### assoc has no child topics
                 // and populate list to group topics by their related assoc (wikidata property)-type
                 for (var index in related_topics) {
                     var related_topic = related_topics[index]
@@ -70,8 +69,8 @@
                             + 'class="field-label wikidata-relation-type" id="'+property_id+'">'
                             + property_label + '</div>')
                         $('div#' + property_id).click(function (e){
-                            var assoc = dm4c.restc.get_association_by_id(e.target.id)
-                            var topic_id = assoc.composite['org.deepamehta.wikidata.search_entity'].id
+                            var assoc = dm4c.restc.get_association_by_id(e.target.id, true)
+                            var topic_id = assoc.childs['org.deepamehta.wikidata.search_entity'].id
                             dm4c.do_reveal_related_topic(topic_id, "show")
                         })
                         // create listing per wikidata-property type
@@ -98,7 +97,7 @@
                         var name = ""
                         try {
                             name = related_wikidata_element
-                                .composite['org.deepamehta.wikidata.search_entity_label'].value
+                                .childs['org.deepamehta.wikidata.search_entity_label'].value
                         } catch (name_e) {
                             name = related_wikidata_element.value
                         }
@@ -147,25 +146,15 @@
                 render_wikidata_footer()
 
             } else {                                                              // --  Wikidata Property Renderer ---
-
-                var default_topic_renderer = dm4c.get_page_renderer("dm4.webclient.topic_renderer")
-                    default_topic_renderer.render_page(topic)
-
-                    render('<div class="field-label">Wikidata Claims</div>')
-                    render('<div class="field-value">Rendering of claimed items is currently de-activated due '
-                        + 'to issue <a href="https://trac.deepamehta.de/ticket/672">#672</a></div>')
-
-                /** load_related_claims(topic.id, function (data) {
+                load_related_claims(topic.id, function (data) {
                     var default_topic_renderer = dm4c.get_page_renderer("dm4.webclient.topic_renderer")
-                    default_topic_renderer.render_page(topic)
+                        default_topic_renderer.render_page(topic)
                     render('<div class="field-label">Wikidata Claims</div>')
                     var $container_p = $('<div class="field-value">')
-                    var related_claims = data
+                    var related_claims = data.items
                     var $claim_listing = $('<ul class="claim-listing">')
                     for (var claim_idx in related_claims) {
-                        // fetch composite .. (because fetchComposite is not yet inplenented?)
-                        var claim = dm4c.restc.get_association_by_id(related_claims[claim_idx].id)
-                        // load both player ... (because fetchRelated is not yet implemented)
+                        var claim = related_claims[claim_idx]
                         var player_one = dm4c.fetch_topic(claim.role_1.topic_id)
                         var player_two = dm4c.fetch_topic(claim.role_2.topic_id)
                         //
@@ -180,7 +169,7 @@
                         // click handler 1, ### to reveal both players, then draw and select association
                         $property_name.click(function(e) {
                             // fetch assoc-composite .. (again)
-                            var assoc = dm4c.restc.get_association_by_id(e.target.id.substr(5))
+                            var assoc = dm4c.restc.get_association_by_id(e.target.id.substr(5), true)
                             // load both player (again) ... (because fetchRelated is not yet implemented)
                             var player_one = dm4c.fetch_topic(assoc.role_1.topic_id)
                             var player_two = dm4c.fetch_topic(assoc.role_2.topic_id)
@@ -202,9 +191,7 @@
                     render($container_p)
                     render_wikidata_footer()
 
-                }) **/
-
-                render_wikidata_footer()
+                })
 
             }
 
@@ -297,13 +284,13 @@
             function entity_alphabetic_sort (a, b) {
                 var scoreA = ""
                 try {
-                    scoreA = a.composite['org.deepamehta.wikidata.search_entity_label'].value
+                    scoreA = a.childs['org.deepamehta.wikidata.search_entity_label'].value
                 } catch (name_e) {
                     scoreA = a.value
                 }
                 var scoreB = ""
                 try {
-                    scoreB = b.composite['org.deepamehta.wikidata.search_entity_label'].value
+                    scoreB = b.childs['org.deepamehta.wikidata.search_entity_label'].value
                 } catch (name_e) {
                     scoreB = b.value
                 }

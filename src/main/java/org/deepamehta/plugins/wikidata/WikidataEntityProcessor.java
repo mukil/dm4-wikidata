@@ -3,7 +3,7 @@ package org.deepamehta.plugins.wikidata;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.AssociationModel;
-import de.deepamehta.core.model.CompositeValueModel;
+import de.deepamehta.core.model.ChildTopicsModel;
 import de.deepamehta.core.model.SimpleValue;
 import de.deepamehta.core.model.TopicModel;
 import de.deepamehta.core.model.TopicRoleModel;
@@ -31,7 +31,7 @@ import org.wikidata.wdtk.util.Timer;
  * Thanks for sharing. Honorable mentions go to jri for telling me about the 
  * ImportPackage notations which helped me to run the WDTK within OSGi.
  */
-public class WikidataPersonaProcessor implements EntityDocumentProcessor {
+public class WikidataEntityProcessor implements EntityDocumentProcessor {
     
     private Logger log = Logger.getLogger(getClass().getName());
     
@@ -54,11 +54,11 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
     DeepaMehtaService dms;
     WikidataSearchPlugin wdSearch;
 
-    public WikidataPersonaProcessor (DeepaMehtaService dms, WikidataSearchPlugin wd, int timeout) {
+    public WikidataEntityProcessor (DeepaMehtaService dms, WikidataSearchPlugin wd, int timeout) {
         this.timeout = timeout;
         this.dms = dms;
         this.wdSearch = wd;
-        log.info("Set up WikidataPersonaProcessor to run for " + timeout + " seconds");
+        log.info("Set up WikidataEntityProcessor to run for " + timeout + " seconds");
     }
 
     // globally collect some label for every item processed.. (note: in memory!)
@@ -315,8 +315,8 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
     private Topic createPersonTopic(String firstName, String lastName, String itemId) {
         Topic person = null;
         if (!alreadyExists(itemId)) {
-            CompositeValueModel personComposite = new CompositeValueModel();
-            personComposite.put(DM_PERSON_NAME, new CompositeValueModel()
+            ChildTopicsModel personComposite = new ChildTopicsModel();
+            personComposite.put(DM_PERSON_NAME, new ChildTopicsModel()
                 .put(DM_PERSON_FIRST_NAME, firstName)
                 .put(DM_PERSON_LAST_NAME, lastName)
             );
@@ -332,7 +332,7 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
             addWikidataItemDescription(itemId, desc, personComposite);
             TopicModel personModel = new TopicModel(
                 WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_PERSON, personComposite);
-            person = dms.createTopic(personModel, null);
+            person = dms.createTopic(personModel);
             wdSearch.assignToWikidataWorkspace(person);
             // log.info("> Created person Topic: " + firstName + " " + lastName);
         }
@@ -342,7 +342,7 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
     private Topic createInstitutionTopic(String name, String itemId) {
         Topic institution = null;
         if (!alreadyExists(itemId)) {
-            CompositeValueModel institutionComposite = new CompositeValueModel();
+            ChildTopicsModel institutionComposite = new ChildTopicsModel();
             institutionComposite.put(DM_INSTITUTION_NAME, name);
             if (all_websites.containsKey(itemId)) {
                 institutionComposite.add(DM_WEBBROWSER_URL, 
@@ -357,7 +357,7 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
             TopicModel institutionModel = new TopicModel(
                 WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_INSTITUTION, institutionComposite);
             // ### set GeoCoordinate Facet via values in all_coordinates
-            institution = dms.createTopic(institutionModel, null);
+            institution = dms.createTopic(institutionModel);
             wdSearch.assignToWikidataWorkspace(institution);
         }
         return institution;
@@ -369,7 +369,7 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
             TopicModel cityModel = new TopicModel(
                 WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_CITY, new SimpleValue(name));
             // ### set GeoCoordinate Facet via values in all_coordinates
-            city = dms.createTopic(cityModel, null);
+            city = dms.createTopic(cityModel);
             wdSearch.assignToWikidataWorkspace(city);
         }
         return city;
@@ -381,14 +381,14 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
             TopicModel countryModel = new TopicModel(
                 WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_COUNTRY, new SimpleValue(name));
             // ### set GeoCoordinate Facet via values in all_coordinates
-            country = dms.createTopic(countryModel, null);
+            country = dms.createTopic(countryModel);
             wdSearch.assignToWikidataWorkspace(country);
         }
         return country;
     }
     
-    private CompositeValueModel addWikidataItemDescription(String itemId, String desc, 
-            CompositeValueModel comp) {
+    private ChildTopicsModel addWikidataItemDescription(String itemId, String desc, 
+            ChildTopicsModel comp) {
         comp.put(DM_NOTES, desc + "<p class=\"wd-item-footer\">"
                 + "For more infos visit this items "
                 + "<a href=\"http://www.wikidata.org./entity/" + itemId 
@@ -401,18 +401,18 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
         if (all_websites.containsKey(itemId)) {
             TopicModel url = new TopicModel(DM_WEBBROWSER_URL, 
                 new SimpleValue(all_websites.get(itemId)));
-            Topic website = dms.createTopic(url, null);
+            Topic website = dms.createTopic(url);
             if (website != null && topic != null) {
                 dms.createAssociation(new AssociationModel("dm4.core.association",
                     new TopicRoleModel(topic.getId(), "dm4.core.default"), 
-                    new TopicRoleModel(website.getId(), "dm4.core.default")), null);   
+                    new TopicRoleModel(website.getId(), "dm4.core.default")));
             }
         }
     }
     
     private boolean alreadyExists (String wikidataItemId) {
         String uri = WikidataEntityMap.WD_ENTITY_BASE_URI + wikidataItemId;
-        Topic entity = dms.getTopic("uri", new SimpleValue(uri), false);
+        Topic entity = dms.getTopic("uri", new SimpleValue(uri));
         if (entity == null) return false;
         return true;
     }
@@ -435,9 +435,9 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
     }
 
     /**
-    * Counts one entity. Every once in a while, the current time is checked so
-    * as to print an intermediate report roughly every ten seconds.
-    */
+     * Counts one entity. Every once in a while, the current time is checked so
+     * as to print an intermediate report roughly every ten seconds.
+     */
     private void countEntity() {
        if (!this.timer.isRunning()) {
            startTimer();
@@ -459,8 +459,8 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
     }
 
     /**
-    * Stops the processing and prints the final time.
-    */
+     * Stops the processing and prints the final time.
+     */
     public void stop() {
         
         printProcessingStatus();
@@ -474,6 +474,7 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
             if (cityName != null) {
                 city = createCityTopic(cityName, itemId);
                 createRelatedURLTopic(city, itemId);
+                wdSearch.assignToWikidataWorkspace(city);
             }
         }
 
@@ -484,6 +485,7 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
             if (countryName != null) {
                 country = createCountryTopic(countryName, itemId);
                 createRelatedURLTopic(country, itemId);
+                wdSearch.assignToWikidataWorkspace(country);
             }
         }
         
@@ -493,6 +495,7 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
             Topic institution;
             if (instName != null) {
                 institution = createInstitutionTopic(instName, itemId);
+                wdSearch.assignToWikidataWorkspace(institution);
             }
         }
         
@@ -503,16 +506,17 @@ public class WikidataPersonaProcessor implements EntityDocumentProcessor {
             if (fullName != null) {
                 String firstName = fullName.split(" ")[0]; // ### import full name
                 String lastName = fullName.split(" ")[fullName.split(" ").length-1];
-                person = createPersonTopic(firstName, lastName, itemId);   
+                person = createPersonTopic(firstName, lastName, itemId);
+                wdSearch.assignToWikidataWorkspace(person);
             } else {
                 log.warning("Person Topic ("+itemId+") NOT created (no label value found!) --- Skippin Entry");
             }
         }
 
-        ResultList<RelatedTopic> personas = dms.getTopics("dm4.contacts.person", false, 0);
-        ResultList<RelatedTopic> institutions = dms.getTopics("dm4.contacts.institution", false, 0);
-        ResultList<RelatedTopic> cities = dms.getTopics("dm4.contacts.city", false, 0);
-        ResultList<RelatedTopic> countries = dms.getTopics("dm4.contacts.country", false, 0);
+        ResultList<RelatedTopic> personas = dms.getTopics("dm4.contacts.person", 0);
+        ResultList<RelatedTopic> institutions = dms.getTopics("dm4.contacts.institution", 0);
+        ResultList<RelatedTopic> cities = dms.getTopics("dm4.contacts.city", 0);
+        ResultList<RelatedTopic> countries = dms.getTopics("dm4.contacts.country", 0);
         if (personas != null && institutions != null && cities != null && countries != null) {
             log.info("DeepaMehta now recognizes " + this.all_persons.size() + " human beings"
                 + ", " + this.all_institutions.size() + " institutions, "

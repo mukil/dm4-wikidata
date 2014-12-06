@@ -12,10 +12,10 @@
         // === Page Renderer Implementation ===
 
         render_page: function(topic) {
-
-            var search_query = topic.composite['org.deepamehta.wikidata.search_query'].value
-            var search_language = topic.composite['org.deepamehta.wikidata.language'].value
-            var search_entities = topic.composite['org.deepamehta.wikidata.search_entity']
+            
+            var search_query = topic.childs['org.deepamehta.wikidata.search_query'].value
+            var search_language = topic.childs['org.deepamehta.wikidata.language'].value
+            var search_entities = topic.childs['org.deepamehta.wikidata.search_entity']
 
             render('<div class="field-label">Wikidata Search Query</div>')
             render('<div class="wikidata-query-info">\"'+ search_query + '\" ('+ search_language +')</div>')
@@ -34,20 +34,20 @@
                 var result_item = search_entities[i]
                 var entity_id = result_item.id
                 var entity_uri = result_item.uri
-                var entity_name = result_item.composite['org.deepamehta.wikidata.search_entity_label'].value
+                var entity_name = result_item.childs['org.deepamehta.wikidata.search_entity_label'].value
                 var entity_description = ""
-                if (result_item.composite.hasOwnProperty('org.deepamehta.wikidata.search_entity_description')) {
-                    entity_description = result_item.composite['org.deepamehta.wikidata.search_entity_description']
+                if (result_item.childs.hasOwnProperty('org.deepamehta.wikidata.search_entity_description')) {
+                    entity_description = result_item.childs['org.deepamehta.wikidata.search_entity_description']
                 }
-                // var entity_url = result_item.composite['org.deepamehta.wikidata.search_entity_alias']
+                // var entity_url = result_item.childs['org.deepamehta.wikidata.search_entity_alias']
                 var alias_names = ""
-                if (result_item.composite.hasOwnProperty('org.deepamehta.wikidata.search_entity_alias')) {
-                    var aliases = result_item.composite['org.deepamehta.wikidata.search_entity_alias']
+                if (result_item.childs.hasOwnProperty('org.deepamehta.wikidata.search_entity_alias')) {
+                    var aliases = result_item.childs['org.deepamehta.wikidata.search_entity_alias']
                     for (var k=0; k < aliases.length; k++) {
                         alias_names += ' '+ aliases[k].value
                     }
                 }
-                var item_type = result_item.composite['org.deepamehta.wikidata.search_entity_type'].value
+                var item_type = result_item.childs['org.deepamehta.wikidata.search_entity_type'].value
                 var $list_item = $('<li class="wikidata-item">')
                 var $item_name = ""
                 var $item_icon = ""
@@ -117,15 +117,15 @@
                 $('#page-content').removeClass('wikidata-page')
             }
 
-            /** sorting asc by item.composite["org.deepamehta.wikidata.search_ordinal_nr"].value */
+            /** sorting asc by item.childs["org.deepamehta.wikidata.search_ordinal_nr"].value */
             function result_order_sort (a, b) {
                 var scoreA = 0
                 var scoreB = 0
-                if (a.composite.hasOwnProperty("org.deepamehta.wikidata.search_ordinal_nr")) {
-                    scoreA = a.composite["org.deepamehta.wikidata.search_ordinal_nr"].value
+                if (a.childs.hasOwnProperty("org.deepamehta.wikidata.search_ordinal_nr")) {
+                    scoreA = a.childs["org.deepamehta.wikidata.search_ordinal_nr"].value
                 }
-                if (b.composite.hasOwnProperty("org.deepamehta.wikidata.search_ordinal_nr")) {
-                    scoreB = b.composite["org.deepamehta.wikidata.search_ordinal_nr"].value
+                if (b.childs.hasOwnProperty("org.deepamehta.wikidata.search_ordinal_nr")) {
+                    scoreB = b.childs["org.deepamehta.wikidata.search_ordinal_nr"].value
                 }
 
                 if (scoreA < scoreB) // sort string descending

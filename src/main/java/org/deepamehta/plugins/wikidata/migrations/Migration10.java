@@ -1,6 +1,5 @@
 package org.deepamehta.plugins.wikidata.migrations;
 
-import de.deepamehta.core.AssociationType;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.TopicType;
 import de.deepamehta.core.model.*;
@@ -63,11 +62,11 @@ public class Migration10 extends Migration {
     // === Workspace ===
 
     private void assignWorkspace(Topic topic) {
-        Topic defaultWorkspace = dms.getTopic("uri", new SimpleValue(WS_WIKIDATA_URI), false);
+        Topic defaultWorkspace = dms.getTopic("uri", new SimpleValue(WS_WIKIDATA_URI));
         dms.createAssociation(new AssociationModel("dm4.core.aggregation",
             new TopicRoleModel(topic.getId(), "dm4.core.parent"),
             new TopicRoleModel(defaultWorkspace.getId(), "dm4.core.child")
-        ), null);
+        ));
     }
 
 }

@@ -81,7 +81,7 @@ div.wikidata-query-info {
 #page-content .wikidata-loading {
     margin-left: auto;
     margin-right: auto;
-    position: relative; top: 40%;
+    position: absolute; top: 40%; right: 18%;
     z-index: 1001;
 }
 

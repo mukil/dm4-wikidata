@@ -14,9 +14,10 @@ In particular this plugin provides users the following options and commands:
 
 The motivation for this plugin was to enable users and researchers from various language-communities to (a) _query_ and _navigate_ the actual wikidata in a graphical way and (b) based on that, _create_ and _share_ personal views (so called Topic Maps) around items currently discussed in wikidata.
 
-Currently wikidata can be queried  in the following (randomly selected) languages:
+Currently wikidata can be queried  in the following (more or less randomly selected) languages:
 
 `Afrikaans`, `Albanian`, `Arabic`, `Burmes`, `Chinese`, `English`, `German`, `Greek`, `Indonesian`, `Japanese`, `Kirundi`, `Persian`, `Polish`, `Portuguese`, `Romanian`, `Russian`, `Sanskrit`, `Slovak`, `Slovene`, `Spanish`, `Swedish`, `Thai` and `Turkish`.
+
 
 If your language is missing here, please excuse that and file an issue at http://trac.deepamehta.de.
 
@@ -30,7 +31,7 @@ https://github.com/jri/deepamehta
 
 You can find a bundle file for installation at [http://download.deepamehta.de](http://download.deepamehta.de).
 
-Copy the downloaded `dm43-wikidata-search-0.0.3-SNAPSHOT.jar` file into your DeepaMehta bundle repository and re-start your [DeepaMehta installation](https://github.com/jri/deepamehta#requirements).
+Copy the downloaded `dm43-wikidata-search-0.0.x.jar` file into your DeepaMehta bundle repository and re-start your [DeepaMehta installation](https://github.com/jri/deepamehta#requirements).
 
 ## Usage
 
@@ -49,6 +50,9 @@ You can find more infos on this project in the DeepaMehta Community Trac at http
 This software is released under the terms of the GNU General Public License in Version 3.0, 2007. You can find a copy of that in the root directory of this repository or read it [here](http://www.gnu.org/licenses/gpl).
 
 # Version History
+
+0.0.4, Upcoming
+- ...
 
 0.0.3, Jul 07, 2014
 - Introducing custom page renderer for "Wikidata Entities" 

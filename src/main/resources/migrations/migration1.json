@@ -7,7 +7,7 @@
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
-                    "composite": {
+                    "childs": {
                         "dm4.webclient.show_in_create_menu": false,
                         "dm4.webclient.searchable_as_unit": false,
                         "dm4.webclient.input_field_rows": 1,
@@ -24,7 +24,7 @@
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
-                    "composite": {
+                    "childs": {
                         "dm4.webclient.show_in_create_menu": false,
                         "dm4.webclient.searchable_as_unit": false,
                         "dm4.webclient.input_field_rows": 1,
@@ -41,7 +41,7 @@
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
-                    "composite": {
+                    "childs": {
                         "dm4.webclient.show_in_create_menu": false,
                         "dm4.webclient.searchable_as_unit": false,
                         "dm4.webclient.input_field_rows": 1,
@@ -69,7 +69,7 @@
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
-                    "composite": {
+                    "childs": {
                         "dm4.webclient.show_in_create_menu": false,
                         "dm4.webclient.searchable_as_unit": false,
                         "dm4.webclient.input_field_rows": 1,
@@ -86,7 +86,7 @@
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
-                    "composite": {
+                    "childs": {
                         "dm4.webclient.show_in_create_menu": false,
                         "dm4.webclient.searchable_as_unit": false,
                         "dm4.webclient.input_field_rows": 1,
@@ -103,7 +103,7 @@
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
-                    "composite": {
+                    "childs": {
                         "dm4.webclient.show_in_create_menu": false,
                         "dm4.webclient.searchable_as_unit": false,
                         "dm4.webclient.input_field_rows": 4,
@@ -120,7 +120,7 @@
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
-                    "composite": {
+                    "childs": {
                         "dm4.webclient.show_in_create_menu": false,
                         "dm4.webclient.searchable_as_unit": false,
                         "dm4.webclient.input_field_rows": 1,
@@ -165,7 +165,7 @@
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
-                    "composite": {
+                    "childs": {
                         "dm4.webclient.show_in_create_menu": false,
                         "dm4.webclient.searchable_as_unit": false,
                         "dm4.webclient.input_field_rows": 1,
@@ -202,7 +202,7 @@
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
-                    "composite": {
+                    "childs": {
                         "dm4.webclient.show_in_create_menu": false,
                         "dm4.webclient.searchable_as_unit": false,
                         "dm4.webclient.input_field_rows": 4,
@@ -214,11 +214,11 @@
             ],
             "label_config": [ "org.deepamehta.wikidata.search_query", "org.deepamehta.wikidata.language" ]
         }
-    ], "topics": [ ### fixme: pull these instances from wikidata, i mean, thats the whole point, isnt it?
+    ], "topics": [
         {
             "type_uri" : "org.deepamehta.wikidata.language",
             "uri" : "org.deepamehta.wikidata.lang_af",
-            "composite": {
+            "childs": {
                 "org.deepamehta.wikidata.language_name": "Afrikaans",
                 "org.deepamehta.wikidata.language_code_iso": "af"
             }
@@ -226,7 +226,7 @@
         {
             "type_uri" : "org.deepamehta.wikidata.language",
             "uri" : "org.deepamehta.wikidata.lang_al",
-            "composite": {
+            "childs": {
                 "org.deepamehta.wikidata.language_name": "Albanian",
                 "org.deepamehta.wikidata.language_code_iso": "al"
             }
@@ -234,7 +234,7 @@
         {
             "type_uri" : "org.deepamehta.wikidata.language",
             "uri" : "org.deepamehta.wikidata.lang_ar",
-            "composite": {
+            "childs": {
                 "org.deepamehta.wikidata.language_name": "Arabic",
                 "org.deepamehta.wikidata.language_code_iso": "ar"
             }
@@ -242,71 +242,223 @@
         {
             "type_uri" : "org.deepamehta.wikidata.language",
             "uri" : "org.deepamehta.wikidata.lang_my",
-            "composite": {
-                "org.deepamehta.wikidata.language_name": "Burmes",
+            "childs": {
+                "org.deepamehta.wikidata.language_name": "Burmese",
                 "org.deepamehta.wikidata.language_code_iso": "my"
             }
         },
         {
             "type_uri" : "org.deepamehta.wikidata.language",
             "uri" : "org.deepamehta.wikidata.lang_el",
-            "composite": {
+            "childs": {
                 "org.deepamehta.wikidata.language_name": "Greek",
                 "org.deepamehta.wikidata.language_code_iso": "el"
             }
         },
         {
             "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_fr",
+            "childs": {
+                "org.deepamehta.wikidata.language_name": "French",
+                "org.deepamehta.wikidata.language_code_iso": "fr"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
             "uri" : "org.deepamehta.wikidata.lang_pt",
-            "composite": {
+            "childs": {
                 "org.deepamehta.wikidata.language_name": "Portuguese",
                 "org.deepamehta.wikidata.language_code_iso": "pt"
             }
         },
         {
             "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_ko",
+            "childs": {
+                "org.deepamehta.wikidata.language_name": "Korean",
+                "org.deepamehta.wikidata.language_code_iso": "Ko"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
             "uri" : "org.deepamehta.wikidata.lang_en",
-            "composite": {
+            "childs": {
                 "org.deepamehta.wikidata.language_name": "English",
                 "org.deepamehta.wikidata.language_code_iso": "en"
             }
         },
         {
             "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_fi",
+            "childs": {
+                "org.deepamehta.wikidata.language_name": "Finnish",
+                "org.deepamehta.wikidata.language_code_iso": "fi"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_et",
+            "childs": {
+                "org.deepamehta.wikidata.language_name": "Estonian",
+                "org.deepamehta.wikidata.language_code_iso": "et"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_ka",
+            "childs": {
+                "org.deepamehta.wikidata.language_name": "Georgian",
+                "org.deepamehta.wikidata.language_code_iso": "ka"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_nl",
+            "childs": {
+                "org.deepamehta.wikidata.language_name": "Dutch",
+                "org.deepamehta.wikidata.language_code_iso": "nl"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_bg",
+            "childs": {
+                "org.deepamehta.wikidata.language_name": "Bulgarian",
+                "org.deepamehta.wikidata.language_code_iso": "bg"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_cs",
+            "childs": {
+                "org.deepamehta.wikidata.language_name": "Czech",
+                "org.deepamehta.wikidata.language_code_iso": "cs"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_be",
+            "childs": {
+                "org.deepamehta.wikidata.language_name": "Belarusian",
+                "org.deepamehta.wikidata.language_code_iso": "be"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
             "uri" : "org.deepamehta.wikidata.lang_fa",
-            "composite": {
+            "childs": {
                 "org.deepamehta.wikidata.language_name": "Persian",
                 "org.deepamehta.wikidata.language_code_iso": "fa"
             }
         },
         {
             "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_sl",
+            "childs": {
+                "org.deepamehta.wikidata.language_name": "Slovenian",
+                "org.deepamehta.wikidata.language_code_iso": "sl"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
             "uri" : "org.deepamehta.wikidata.lang_pl",
-            "composite": {
+            "childs": {
                 "org.deepamehta.wikidata.language_name": "Polish",
                 "org.deepamehta.wikidata.language_code_iso": "pl"
             }
         },
         {
             "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_sr",
+            "childs": {
+                "org.deepamehta.wikidata.language_name": "Serbian",
+                "org.deepamehta.wikidata.language_code_iso": "sr"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_mi",
+            "childs": {
+                "org.deepamehta.wikidata.language_name": "Maori",
+                "org.deepamehta.wikidata.language_code_iso": "mi"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_ng",
+            "childs": {
+                "org.deepamehta.wikidata.language_name": "Ndonga",
+                "org.deepamehta.wikidata.language_code_iso": "ng"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
             "uri" : "org.deepamehta.wikidata.lang_sv",
-            "composite": {
+            "childs": {
                 "org.deepamehta.wikidata.language_name": "Swedish",
                 "org.deepamehta.wikidata.language_code_iso": "sv"
             }
         },
         {
             "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_uk",
+            "childs": {
+                "org.deepamehta.wikidata.language_name": "Ukrainian",
+                "org.deepamehta.wikidata.language_code_iso": "uk"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_vi",
+            "childs": {
+                "org.deepamehta.wikidata.language_name": "Vietnamese",
+                "org.deepamehta.wikidata.language_code_iso": "vi"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_sw",
+            "childs": {
+                "org.deepamehta.wikidata.language_name": "Swahili",
+                "org.deepamehta.wikidata.language_code_iso": "sw"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_he",
+            "childs": {
+                "org.deepamehta.wikidata.language_name": "Hebrew",
+                "org.deepamehta.wikidata.language_code_iso": "he"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_bs",
+            "childs": {
+                "org.deepamehta.wikidata.language_name": "Bosnian",
+                "org.deepamehta.wikidata.language_code_iso": "bs"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
             "uri" : "org.deepamehta.wikidata.lang_tr",
-            "composite": {
+            "childs": {
                 "org.deepamehta.wikidata.language_name": "Turkish",
                 "org.deepamehta.wikidata.language_code_iso": "tr"
             }
         },
         {
             "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_hi",
+            "childs": {
+                "org.deepamehta.wikidata.language_name": "Hindi",
+                "org.deepamehta.wikidata.language_code_iso": "hi"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
             "uri" : "org.deepamehta.wikidata.lang_ru",
-            "composite": {
+            "childs": {
                 "org.deepamehta.wikidata.language_name": "Russian",
                 "org.deepamehta.wikidata.language_code_iso": "ru"
             }
@@ -314,7 +466,7 @@
         {
             "type_uri" : "org.deepamehta.wikidata.language",
             "uri" : "org.deepamehta.wikidata.lang_es",
-            "composite": {
+            "childs": {
                 "org.deepamehta.wikidata.language_name": "Spanish",
                 "org.deepamehta.wikidata.language_code_iso": "es"
             }
@@ -322,7 +474,7 @@
         {
             "type_uri" : "org.deepamehta.wikidata.language",
             "uri" : "org.deepamehta.wikidata.lang_ja",
-            "composite": {
+            "childs": {
                 "org.deepamehta.wikidata.language_name": "Japanese",
                 "org.deepamehta.wikidata.language_code_iso": "ja"
             }
@@ -330,7 +482,7 @@
         {
             "type_uri" : "org.deepamehta.wikidata.language",
             "uri" : "org.deepamehta.wikidata.lang_zh",
-            "composite": {
+            "childs": {
                 "org.deepamehta.wikidata.language_name": "Chinese",
                 "org.deepamehta.wikidata.language_code_iso": "zh"
             }
@@ -338,15 +490,31 @@
         {
             "type_uri" : "org.deepamehta.wikidata.language",
             "uri" : "org.deepamehta.wikidata.lang_rn",
-            "composite": {
+            "childs": {
                 "org.deepamehta.wikidata.language_name": "Kirundi",
                 "org.deepamehta.wikidata.language_code_iso": "rn"
             }
         },
         {
             "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_nv",
+            "childs": {
+                "org.deepamehta.wikidata.language_name": "Navaho",
+                "org.deepamehta.wikidata.language_code_iso": "nv"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
+            "uri" : "org.deepamehta.wikidata.lang_mk",
+            "childs": {
+                "org.deepamehta.wikidata.language_name": "Macedonian",
+                "org.deepamehta.wikidata.language_code_iso": "mk"
+            }
+        },
+        {
+            "type_uri" : "org.deepamehta.wikidata.language",
             "uri" : "org.deepamehta.wikidata.lang_ro",
-            "composite": {
+            "childs": {
                 "org.deepamehta.wikidata.language_name": "Romanian",
                 "org.deepamehta.wikidata.language_code_iso": "ro"
             }
@@ -354,7 +522,7 @@
         {
             "type_uri" : "org.deepamehta.wikidata.language",
             "uri" : "org.deepamehta.wikidata.lang_sa",
-            "composite": {
+            "childs": {
                 "org.deepamehta.wikidata.language_name": "Sanskrit",
                 "org.deepamehta.wikidata.language_code_iso": "sa"
             }
@@ -362,7 +530,7 @@
         {
             "type_uri" : "org.deepamehta.wikidata.language",
             "uri" : "org.deepamehta.wikidata.lang_id",
-            "composite": {
+            "childs": {
                 "org.deepamehta.wikidata.language_name": "Indonesian",
                 "org.deepamehta.wikidata.language_code_iso": "id"
             }
@@ -370,23 +538,23 @@
         {
             "type_uri" : "org.deepamehta.wikidata.language",
             "uri" : "org.deepamehta.wikidata.lang_th",
-            "composite": {
+            "childs": {
                 "org.deepamehta.wikidata.language_name": "Thai",
                 "org.deepamehta.wikidata.language_code_iso": "th"
             }
         },
         {
             "type_uri" : "org.deepamehta.wikidata.language",
-            "uri" : "org.deepamehta.wikidata.lang_sl",
-            "composite": {
-                "org.deepamehta.wikidata.language_name": "Slovene",
-                "org.deepamehta.wikidata.language_code_iso": "sl"
+            "uri" : "org.deepamehta.wikidata.lang_sm",
+            "childs": {
+                "org.deepamehta.wikidata.language_name": "Samoan",
+                "org.deepamehta.wikidata.language_code_iso": "sm"
             }
         },
         {
             "type_uri" : "org.deepamehta.wikidata.language",
             "uri" : "org.deepamehta.wikidata.lang_sk",
-            "composite": {
+            "childs": {
                 "org.deepamehta.wikidata.language_name": "Slovak",
                 "org.deepamehta.wikidata.language_code_iso": "sk"
             }
@@ -394,7 +562,7 @@
         {
             "type_uri" : "org.deepamehta.wikidata.language",
             "uri" : "org.deepamehta.wikidata.lang_de",
-            "composite": {
+            "childs": {
                 "org.deepamehta.wikidata.language_name": "German",
                 "org.deepamehta.wikidata.language_code_iso": "de"
             }
