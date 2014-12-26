@@ -9,7 +9,7 @@
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
-                    "composite": {
+                    "childs": {
                         "dm4.webclient.show_in_create_menu": false,
                         "dm4.webclient.searchable_as_unit": false,
                         "dm4.webclient.input_field_rows": 1,
@@ -32,7 +32,7 @@
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
-                    "composite": {
+                    "childs": {
                         "dm4.webclient.show_in_create_menu": false,
                         "dm4.webclient.searchable_as_unit": false,
                         "dm4.webclient.input_field_rows": 1,
@@ -55,7 +55,7 @@
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
-                    "composite": {
+                    "childs": {
                         "dm4.webclient.show_in_create_menu": false,
                         "dm4.webclient.searchable_as_unit": false,
                         "dm4.webclient.input_field_rows": 1,
@@ -73,7 +73,7 @@
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
-                    "composite": {
+                    "childs": {
                         "dm4.webclient.color": "#006699"
                     }
                 }

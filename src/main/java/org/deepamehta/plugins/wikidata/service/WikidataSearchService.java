@@ -3,9 +3,8 @@ package org.deepamehta.plugins.wikidata.service;
 
 import de.deepamehta.core.RelatedAssociation;
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.service.ClientState;
 import de.deepamehta.core.service.PluginService;
-import java.util.List;
+import de.deepamehta.core.service.ResultList;
 
 /**
  * A very basic plugin to search and explore wikidata.
@@ -26,7 +25,7 @@ public interface WikidataSearchService extends PluginService {
      *  @param {query}              name of wikidata property in search
      *  @param {language_code}      ISO 639-1 language code (must exist in DM installation)
      */
-    Topic searchWikidataEntity(String query, String iso_language_code, ClientState clientstate, String entityType);
+    Topic searchWikidataEntity(String query, String iso_language_code, String entityType);
 
     /**
      *  This method gets (or creates) a \"Wikidata Search Entity\" (in DeepaMehta 4) by its ID (wikidata).
@@ -34,21 +33,21 @@ public interface WikidataSearchService extends PluginService {
      *
      *  @param {entityId}           wikidataId
      */
-    Topic getOrCreateWikidataEntity(String wikidataEntityId, String iso_language_code, ClientState clientState);
+    Topic getOrCreateWikidataEntity(String wikidataEntityId, String iso_language_code);
 
     /**
      *  This method loads all claims (with language specific values) for a wikidata-entity into DeepaMehta 4.
      *
      *  @param {id}              \"Wikidata Search Entity\"-Topic ID
      */
-    Topic loadClaimsAndRelatedWikidataItems(long entityTopicId, String iso_language_code, ClientState clientState);
+    Topic loadClaimsAndRelatedWikidataItems(long entityTopicId, String iso_language_code);
 
     /**
      *  This method creates a DeepaMehta Association Type given a \"Wikidata Search Entity\" (of type=property).
      *
      *  @param {id}              \"Wikidata Search Entity\"-Topic ID (entity-type must be of value "property")
      */
-    Topic createWikidataAssociationType(long entityTopicId, ClientState clientState);
+    Topic createWikidataAssociationType(long entityTopicId);
 
     /**
      *  This method retrieves all associated associations of type "Wikidata Claim" for any given
@@ -56,6 +55,8 @@ public interface WikidataSearchService extends PluginService {
      *
      *  @param {id}              \"Wikidata Search Entity\"-Topic ID (entity-type must be of value "property")
      */
-    List<RelatedAssociation> getTopicRelatedAssociations(long topicId);
+    ResultList<RelatedAssociation> getTopicRelatedAssociations(long topicId);
+    
+    void assignToWikidataWorkspace(Topic topic);
 
 }

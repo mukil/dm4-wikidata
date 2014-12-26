@@ -25,7 +25,7 @@
             var commands = []
             if (topic.type_uri === 'org.deepamehta.wikidata.search_entity') {
                 // if type is item
-                var entity_type = topic.composite['org.deepamehta.wikidata.search_entity_type'].value
+                var entity_type = topic.childs['org.deepamehta.wikidata.search_entity_type'].value
                 if (entity_type === "item") {
                     commands.push({is_separator: true, context: 'context-menu'})
                     commands.push({
@@ -39,7 +39,6 @@
         })
 
         dm4c.add_listener("init", function() {
-            // if user is authenticated, then we add the wikidata-searchmode
             dm4c.toolbar.searchmode_menu.add_item({label: "Wikidata Search", value: "wikidata-search"})
         })
 
@@ -47,10 +46,10 @@
 
             if (searchmode == "wikidata-search") {
 
-                // check if user is authenticated
+                /** check if user is authenticated
                 if (!dm4c.has_create_permission('org.deepamehta.wikidata.search_bucket')) {
                     return
-                }
+                } **/
 
                 // enable search button
                 dm4c.toolbar.search_button.button("enable")
@@ -70,8 +69,8 @@
                 for (var i=0; i < languages.length; i++) {
 
                     var lang = languages[i]
-                    var lang_name = lang.composite['org.deepamehta.wikidata.language_name']
-                    var lang_code_iso = lang.composite['org.deepamehta.wikidata.language_code_iso']
+                    var lang_name = lang.childs['org.deepamehta.wikidata.language_name']
+                    var lang_code_iso = lang.childs['org.deepamehta.wikidata.language_code_iso']
 
                     language_menu.add_item({
                         label: lang_name.value,

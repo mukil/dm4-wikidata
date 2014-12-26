@@ -9,7 +9,24 @@
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
-                    "composite": {
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1,
+                        "dm4.webclient.locked": true
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikimedia Commons Media Description",
+            "uri": "org.deepamehta.wikidata.commons_media_descr",
+            "data_type_uri": "dm4.core.text",
+            "index_mode_uris": ["dm4.core.fulltext"],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
                         "dm4.webclient.show_in_create_menu": false,
                         "dm4.webclient.searchable_as_unit": false,
                         "dm4.webclient.input_field_rows": 1,
@@ -26,7 +43,7 @@
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
-                    "composite": {
+                    "childs": {
                         "dm4.webclient.show_in_create_menu": false,
                         "dm4.webclient.searchable_as_unit": false,
                         "dm4.webclient.input_field_rows": 1,
@@ -43,7 +60,7 @@
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
-                    "composite": {
+                    "childs": {
                         "dm4.webclient.show_in_create_menu": false,
                         "dm4.webclient.searchable_as_unit": false,
                         "dm4.webclient.input_field_rows": 1,
@@ -53,14 +70,14 @@
             ]
         },
         {
-            "value": "Wikimedia Commons License Name",
-            "uri": "org.deepamehta.wikidata.commons_license_name",
-            "data_type_uri": "dm4.core.text",
-            "index_mode_uris": ["dm4.core.fulltext", "dm4.core.key"],
+            "value": "Wikimedia Commons Author",
+            "uri": "org.deepamehta.wikidata.commons_author_html",
+            "data_type_uri": "dm4.core.html",
+            "index_mode_uris": ["dm4.core.fulltext_key"],
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
-                    "composite": {
+                    "childs": {
                         "dm4.webclient.show_in_create_menu": false,
                         "dm4.webclient.searchable_as_unit": false,
                         "dm4.webclient.input_field_rows": 1,
@@ -70,14 +87,14 @@
             ]
         },
         {
-            "value": "Wikimedia Commons License Info",
-            "uri": "org.deepamehta.wikidata.commons_license_info",
-            "data_type_uri": "dm4.core.text",
-            "index_mode_uris": ["dm4.core.fulltext", "dm4.core.key"],
+            "value": "Wikimedia Commons License",
+            "uri": "org.deepamehta.wikidata.commons_license_html",
+            "data_type_uri": "dm4.core.html",
+            "index_mode_uris": ["dm4.core.fulltext_key"],
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
-                    "composite": {
+                    "childs": {
                         "dm4.webclient.show_in_create_menu": false,
                         "dm4.webclient.searchable_as_unit": false,
                         "dm4.webclient.input_field_rows": 1,

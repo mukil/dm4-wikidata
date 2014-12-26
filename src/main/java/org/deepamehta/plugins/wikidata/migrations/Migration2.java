@@ -35,11 +35,11 @@ public class Migration2 extends Migration {
 
         // 1) create \"Wikidata\"-Workspace
         TopicModel workspace = new TopicModel(WS_WIKIDATA_URI, "dm4.workspaces.workspace");
-        Topic ws = dms.createTopic(workspace, null);
+        Topic ws = dms.createTopic(workspace);
         ws.setSimpleValue("Wikidata");
         log.info("1) Created WIKIDATA Workspace ..");
         // 2) assign "admin" username to \"Wikidata\"-Workspace
-        Topic administrator = dms.getTopic(DEEPAMEHTA_USERNAME_URI, new SimpleValue(DEEPAMEHTA_ADMIN_USERNAME), true);
+        Topic administrator = dms.getTopic(DEEPAMEHTA_USERNAME_URI, new SimpleValue(DEEPAMEHTA_ADMIN_USERNAME));
         assignWorkspace(administrator);
         log.info("2) Assigned admin to WIKIDATA Workspace ..");
         // 3) assign all types to our new workspace
@@ -57,11 +57,11 @@ public class Migration2 extends Migration {
     // === Workspace ===
 
     private void assignWorkspace(Topic topic) {
-        Topic defaultWorkspace = dms.getTopic("uri", new SimpleValue(WS_WIKIDATA_URI), false);
+        Topic defaultWorkspace = dms.getTopic("uri", new SimpleValue(WS_WIKIDATA_URI));
         dms.createAssociation(new AssociationModel("dm4.core.aggregation",
             new TopicRoleModel(topic.getId(), "dm4.core.parent"),
             new TopicRoleModel(defaultWorkspace.getId(), "dm4.core.child")
-        ), null);
+        ));
     }
 
 }

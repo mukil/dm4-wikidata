@@ -81,7 +81,7 @@ div.wikidata-query-info {
 #page-content .wikidata-loading {
     margin-left: auto;
     margin-right: auto;
-    position: relative; top: 40%;
+    position: absolute; top: 40%; right: 18%;
     z-index: 1001;
 }
 
@@ -117,6 +117,21 @@ div.wikidata-query-info {
     position: relative;
     left: -16px;
     top: 10px;
+}
+#page-content img.commons-media {
+    padding-left: 0px;
+    margin-left: 0px;
+    margin: 5px;
+    margin-top: 10px;
+    width: 100%;
+}
+
+p.wd-item-footer {
+    color: #484848;
+}
+
+p.wd-item-footer a:link {
+    color: #006699;
 }
 
 /** blue: #006699; green: 339966; red: 990000; grey: 484848; */

@@ -1,9 +1,6 @@
 package org.deepamehta.plugins.wikidata.migrations;
 
-import de.deepamehta.core.AssociationType;
-import de.deepamehta.core.Topic;
 import de.deepamehta.core.TopicType;
-import de.deepamehta.core.model.*;
 import de.deepamehta.core.service.Migration;
 import java.util.logging.Logger;
 
