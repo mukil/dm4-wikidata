@@ -7,7 +7,7 @@
     <name>DeepaMehta 4 Wikidata Search</name>
     <groupId>org.deepamehta</groupId>
     <artifactId>dm44-wikidata-search</artifactId>
-    <version>0.0.4-SNAPSHOT</version>
+    <version>0.0.4</version>
     <packaging>bundle</packaging>
 
     <parent>
