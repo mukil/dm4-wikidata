@@ -118,6 +118,13 @@ div.wikidata-query-info {
     left: -16px;
     top: 10px;
 }
+#page-content img.commons-media {
+    padding-left: 0px;
+    margin-left: 0px;
+    margin: 5px;
+    margin-top: 10px;
+    width: 100%;
+}
 
 p.wd-item-footer {
     color: #484848;

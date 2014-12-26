@@ -24,8 +24,9 @@ public class Migration10 extends Migration {
     private final String WD_COMMONS_MEDIA_NAME_TYPE_URI = "org.deepamehta.wikidata.commons_media_name";
     private final String WD_COMMONS_MEDIA_PATH_TYPE_URI = "org.deepamehta.wikidata.commons_media_path";
     private final String WD_COMMONS_MEDIA_TYPE_TYPE_URI = "org.deepamehta.wikidata.commons_media_type";
-    private final String WD_COMMONS_LICENSE_NAME_TYPE_URI = "org.deepamehta.wikidata.commons_license_name";
-    private final String WD_COMMONS_LICENSE_INFO_TYPE_URI = "org.deepamehta.wikidata.commons_license_info";
+    private final String WD_COMMONS_MEDIA_DESCR_TYPE_URI = "org.deepamehta.wikidata.commons_media_descr";
+    private final String WD_COMMONS_AUTHOR_HTML_URI = "org.deepamehta.wikidata.commons_author_html";
+    private final String WD_COMMONS_LICENSE_HTML_URI = "org.deepamehta.wikidata.commons_license_html";
 
     @Override
     public void run() {
@@ -37,9 +38,11 @@ public class Migration10 extends Migration {
         assignWorkspace(media_path);
         TopicType media_type = dms.getTopicType(WD_COMMONS_MEDIA_TYPE_TYPE_URI);
         assignWorkspace(media_type);
-        TopicType license_name = dms.getTopicType(WD_COMMONS_LICENSE_NAME_TYPE_URI);
+        TopicType media_descr = dms.getTopicType(WD_COMMONS_MEDIA_DESCR_TYPE_URI);
+        assignWorkspace(media_descr);
+        TopicType license_name = dms.getTopicType(WD_COMMONS_AUTHOR_HTML_URI);
         assignWorkspace(license_name);
-        TopicType license_info = dms.getTopicType(WD_COMMONS_LICENSE_INFO_TYPE_URI);
+        TopicType license_info = dms.getTopicType(WD_COMMONS_LICENSE_HTML_URI);
         assignWorkspace(license_info);
         log.info("1) Assigned alle \"Wikimedia Commons ***\" child-types to \"Wikidata\"-Workspace");
         // 2) Remove (old, unusable) File Association Definion from \"Wikimedia Commons Media\"-Type
@@ -53,9 +56,11 @@ public class Migration10 extends Migration {
         commonsMedia.addAssocDef(new AssociationDefinitionModel("dm4.core.composition_def",
                 commonsMedia.getUri(), WD_COMMONS_MEDIA_TYPE_TYPE_URI, "dm4.core.one", "dm4.core.one"));
         commonsMedia.addAssocDef(new AssociationDefinitionModel("dm4.core.composition_def",
-                commonsMedia.getUri(), WD_COMMONS_LICENSE_NAME_TYPE_URI, "dm4.core.one", "dm4.core.one"));
+                commonsMedia.getUri(), WD_COMMONS_MEDIA_DESCR_TYPE_URI, "dm4.core.one", "dm4.core.one"));
         commonsMedia.addAssocDef(new AssociationDefinitionModel("dm4.core.composition_def",
-                commonsMedia.getUri(), WD_COMMONS_LICENSE_INFO_TYPE_URI, "dm4.core.one", "dm4.core.one"));
+                commonsMedia.getUri(), WD_COMMONS_AUTHOR_HTML_URI, "dm4.core.one", "dm4.core.one"));
+        commonsMedia.addAssocDef(new AssociationDefinitionModel("dm4.core.composition_def",
+                commonsMedia.getUri(), WD_COMMONS_LICENSE_HTML_URI, "dm4.core.one", "dm4.core.one"));
         log.info("2) Assigned all \"Wikimedia Commons ***\" child-types to \"Wikimedia Commons Media\"");
     }
 

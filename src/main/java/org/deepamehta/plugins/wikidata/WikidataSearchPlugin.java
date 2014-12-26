@@ -4,7 +4,6 @@ package org.deepamehta.plugins.wikidata;
 import de.deepamehta.core.Association;
 import de.deepamehta.core.AssociationType;
 import de.deepamehta.core.RelatedAssociation;
-import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.*;
 import de.deepamehta.core.osgi.PluginActivator;
@@ -15,24 +14,35 @@ import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
 import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response.Status;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.deepamehta.plugins.wikidata.service.WikidataSearchService;
-import org.wikidata.wdtk.dumpfiles.DumpProcessingController;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 
 
@@ -85,9 +95,10 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     private final String WD_COMMONS_MEDIA_TYPE_URI = "org.deepamehta.wikidata.commons_media";
     private final String WD_COMMONS_MEDIA_NAME_TYPE_URI = "org.deepamehta.wikidata.commons_media_name";
     private final String WD_COMMONS_MEDIA_PATH_TYPE_URI = "org.deepamehta.wikidata.commons_media_path";
-    private final String WD_COMMONS_MEDIA_TYPE_TYPE_URI = "org.deepamehta.wikidata.commons_media_type";
-    private final String WD_COMMONS_LICENSE_NAME_TYPE_URI = "org.deepamehta.wikidata.commons_media_license_name";
-    private final String WD_COMMONS_LICENSE_INFO_TYPE_URI = "org.deepamehta.wikidata.commons_media_license_info";
+    // private final String WD_COMMONS_MEDIA_TYPE_TYPE_URI = "org.deepamehta.wikidata.commons_media_type";
+    private final String WD_COMMONS_MEDIA_DESCR_TYPE_URI = "org.deepamehta.wikidata.commons_media_descr";
+    private final String WD_COMMONS_AUTHOR_HTML_URI = "org.deepamehta.wikidata.commons_author_html";
+    private final String WD_COMMONS_LICENSE_HTML_URI = "org.deepamehta.wikidata.commons_license_html";
     // private final String WD_GLOBE_COORDINATE_TYPE_URI = "org.deepamehta.wikidata.globe_coordinate";
 
     private final String WD_ENTITY_CLAIM_EDGE = "org.deepamehta.wikidata.claim_edge";
@@ -102,41 +113,22 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             + "&props=info%7Csitelinks%2Furls%7Caliases%7Clabels%7Cdescriptions&dir=ascending&format=json";
     private final String WD_SEARCH_ENTITY_TYPE_PROPERTY = "property";
     private final String WD_SEARCH_ENTITY_TYPE_ITEM = "item";
+    private final String WD_ENTITY_BASE_URI = "org.wikidata.entity.";
     
-    // --- Wikidata Toolkit Dumpfile Importer Settings
+    private final String LANG_EN = "en";
     
-    /**
-     * If set to true, all example programs will run in offline mode. Only data
-     * dumps that have been downloaded in previous runs will be used.
-     */
-    final boolean OFFLINE_MODE = true; // ### make configurable
-
-    /**
-     * Timeout to abort processing after a short while or 0 to disable timeout.
-     * If set, then the processing will cleanly exit after about this many
-     * seconds, as if the dump file would have ended there.
-     */
-    final int TIMEOUT_SEC = 2; // ### make configurable
-    
-    // private String dumpFilePath = ""; // ### make dumpfile location configurable
-   
-    // prevents corrupting the db because of parallel imports/transactions
-    private boolean isCurrentlyImporting = false;
-    
-
-
-    // --- Instance Variables
-
     private final String WIKIDATA_ENTITY_URL_PREFIX = "//www.wikidata.org/wiki/";
     private final String WIKIDATA_PROPERTY_ENTITY_URL_PREFIX = "Property:";
     // private final String WIKIMEDIA_COMMONS_MEDIA_FILE_URL_PREFIX = "//commons.wikimedia.org/wiki/File:";
-    
-    private boolean isInitialized = false;
     
     @Inject
     private AccessControlService acService = null;
     
     
+    
+    // --
+    // --- Public REST API Endpoints
+    // --
 
     @GET
     @Path("/search/{entity}/{query}/{language_code}")
@@ -152,7 +144,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         // sanity check (set en as default-language if nothing was provided by un-initialized language widget)
         if (lang == null || lang.equals("undefined")) {
             log.warning("Wikidata Language Search Option was not provided, now requesting data in EN");
-            lang = WikidataEntityMap.LANG_EN;
+            lang = LANG_EN;
         }
         // start search operation
         try {
@@ -219,7 +211,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         // sanity check (set en as default-language if nothing was provided by un-initialized language widget)
         if (language_code == null || language_code.equals("undefined")) {
             log.warning("Wikidata Language Search Option was not provided, now requesting data in EN");
-            language_code = WikidataEntityMap.LANG_EN;
+            language_code = LANG_EN;
         }
         try {
             // 1) fixme: Authorize request
@@ -294,7 +286,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         // 0) sanity check (set en as default-language if nothing was provided by un-initialized language widget)
         if (language_option == null || language_option.equals("undefined")) {
             log.warning("Wikidata Language Search Option was not provided, now requesting data in EN.");
-            language_option = WikidataEntityMap.LANG_EN;
+            language_option = LANG_EN;
         }
         String wikidataId = wikidataItem.getUri().replaceAll(WD_SEARCH_ENTITIY_DATA_URI_PREFIX, "");
         try {
@@ -383,49 +375,6 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         return associations.loadChildTopics();
     }
     
-    @GET
-    @Path("/import/entities")
-    @Produces(MediaType.TEXT_PLAIN)
-    @Transactional
-    public String processEntitiesFromWikidataDump() {
-        log.info("GET Process Entities of Wikidata JSON Dump");
-        // Note: is just completed if another process operation is not already in progress
-        importWikidataEntities();
-        return "OK";
-    }
-    
-    @GET
-    @Path("/delete/topics")
-    @Produces(MediaType.TEXT_PLAIN)
-    public String deleteAllWikidataTopics() {
-        // Delete all "Person" Topics
-        for (RelatedTopic person : dms.getTopics("dm4.contacts.person", 0)){
-            if (person.getUri().startsWith(WikidataEntityMap.WD_ENTITY_BASE_URI)) {
-                dms.deleteTopic(person.getId());
-            }
-        }
-        // Delete all "Institution"-Topics
-        for (RelatedTopic institution : dms.getTopics("dm4.contacts.institution", 0)){
-            if (institution.getUri().startsWith(WikidataEntityMap.WD_ENTITY_BASE_URI)) {
-            dms.deleteTopic(institution.getId());
-            }
-        }
-        return "OK";
-    }
-    
-    @Override
-    public void assignToWikidataWorkspace(Topic topic) {
-        if (topic == null) return;
-        Topic wikidataWorkspace = dms.getTopic("uri", new SimpleValue(WS_WIKIDATA_URI));
-        if (!associationExists("dm4.core.aggregation", topic, wikidataWorkspace)) {
-            dms.createAssociation(new AssociationModel("dm4.core.aggregation",
-                new TopicRoleModel(topic.getId(), "dm4.core.parent"),
-                new TopicRoleModel(wikidataWorkspace.getId(), "dm4.core.child")
-            ));   
-        }
-    }
-    
-
     // --
     // ---  Wikidata Search (Application Specific) Private Methods
     // --
@@ -726,11 +675,21 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         }
     }
 
-
-
     // --
     // --- DeepaMehta 4 Plugin Related Private Methods
     // --
+    
+    @Override
+    public void assignToWikidataWorkspace(Topic topic) {
+        if (topic == null) return;
+        Topic wikidataWorkspace = dms.getTopic("uri", new SimpleValue(WS_WIKIDATA_URI));
+        if (!associationExists("dm4.core.aggregation", topic, wikidataWorkspace)) {
+            dms.createAssociation(new AssociationModel("dm4.core.aggregation",
+                new TopicRoleModel(topic.getId(), "dm4.core.parent"),
+                new TopicRoleModel(wikidataWorkspace.getId(), "dm4.core.child")
+            ));   
+        }
+    }
 
     private boolean associationExists(String edge_type, Topic item, Topic user) {
         List<Association> results = dms.getAssociations(item.getId(), user.getId(), edge_type);
@@ -742,9 +701,9 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         if (mediaTopic == null) { // create new media topic
             ChildTopicsModel mediaCompositeModel = new ChildTopicsModel()
                 .put(WD_COMMONS_MEDIA_NAME_TYPE_URI, fileName);
-            // ### enrichAboutWikimediaCommonsMetaData(mediaCompositeModel, fileName);
+            enrichAboutWikimediaCommonsMetaData(mediaCompositeModel, fileName);
             TopicModel mediaTopicModel = new TopicModel(WD_COMMONS_MEDIA_TYPE_URI, mediaCompositeModel);
-            mediaTopic = dms.createTopic(mediaTopicModel);
+            mediaTopic = dms.createTopic(mediaTopicModel).loadChildTopics();
             log.info("Created new Wikimedia Commons Media Topic \"" + mediaTopic.getSimpleValue().toString());
         } else {
             mediaTopic = mediaTopic.getRelatedTopic("dm4.core.composition", 
@@ -754,77 +713,70 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         return mediaTopic;
     }
 
-    /** private void enrichAboutWikimediaCommonsMetaData(ChildTopicsModel model, String fileName) {
+    private void enrichAboutWikimediaCommonsMetaData(ChildTopicsModel model, String fileName) {
         // 1) fetch data by name from http://tools.wmflabs.org/magnus-toolserver/commonsapi.php?image=
-        // 2) mediaCompositeModel.put(WD_COMMONS_MEDIA_PATH_TYPE_URI, filePath);
-    } **/
-    
-    
-    
-    // --
-    // --- Methods to process and import topics based on a complete (daily) wikidatawiki (json) dump.
-    // --
-        
-    private void importWikidataEntities() {
-        WikidataEntityProcessor wikidataEntityProcessor = 
-            new WikidataEntityProcessor(dms, this, TIMEOUT_SEC);
-        WikidataSearchPlugin.this.processEntitiesFromWikidataDump(wikidataEntityProcessor);
-    }
-    
-    /**
-     * Processes all entities in a Wikidata dump using the given entity
-     * processor. By default, the most recent JSON dump will be used. In offline
-     * mode, only the most recent previously downloaded file is considered.
-     *
-     * @param entityProcessor the object to use for processing entities
-     * in this dump
-     */
-    private void processEntitiesFromWikidataDump(WikidataEntityProcessor entityProcessor) {
-        
-        if (isCurrentlyImporting == true) {
-            log.warning("One WDTK DumpFileProcessor is already running, please try again later.");
-            return;
-        }
-        // Controller object for processing dumps:
-        DumpProcessingController dumpProcessingController = 
-            new DumpProcessingController("wikidatawiki");
-        dumpProcessingController.setOfflineMode(OFFLINE_MODE);
+        URL requestUri;
+        StringBuffer resultBody = new StringBuffer();
+        String xml_result = "";
         try {
-            String path = findDumpDirectoryPath();
-            log.info("Searching for a wikidata (json) dump on your hard disk under" + path);
-            dumpProcessingController.setDownloadDirectory(path);
-            /** List<MwDumpFile> availableJSONDumps = dumpProcessingController
-                .getWmfDumpFileManager().findAllDumps(DumpContentType.JSON);
-            if (availableJSONDumps == null) throw new RuntimeException("No JSON dumps "
-                + "to process availabe. Place a <date>.json.gz dumpfile in your filerepo "
-                + "under /dumpfiles/wikidatawiki/json-2014XXYY"); **/
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
+            requestUri = new URL("http://tools.wmflabs.org/magnus-toolserver/commonsapi.php?image=" 
+                    + URLEncoder.encode(fileName, CHARSET));
+            log.fine("Requesting Wikimedia Commons Item Details: " + requestUri.toString());
+            // 2) initiate request
+            HttpURLConnection connection = (HttpURLConnection) requestUri.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("User-Agent", "DeepaMehta "+DEEPAMEHTA_VERSION+" - "
+                    + "Wikidata Search " + WIKIDATA_TYPE_SEARCH_VERSION);
+            // 3) check the response
+            int httpStatusCode = connection.getResponseCode();
+            if (httpStatusCode != HttpURLConnection.HTTP_OK) {
+                throw new WebApplicationException(new Throwable("Error with HTTPConnection."),
+                        Status.INTERNAL_SERVER_ERROR);
+            }
+            // 4) read in the response
+            BufferedReader rd = new BufferedReader(new InputStreamReader(connection.getInputStream(), CHARSET));
+            for (String input; (input = rd.readLine()) != null;) {
+                resultBody.append(input);
+            }
+            rd.close();
+            // 5) process response
+            if (resultBody.toString().isEmpty()) {
+                throw new WebApplicationException(new RuntimeException("Wikidata was silent."),
+                        Status.NO_CONTENT);
+            } else {
+                DocumentBuilder builder;
+                Document document;
+                xml_result = resultBody.toString();
+                builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+                document = builder.parse(new InputSource(new ByteArrayInputStream(xml_result.getBytes("utf-8"))));
+                NodeList responses = document.getElementsByTagName("response");
+                // Node defaultLanguageDescr = responses.item(1).getFirstChild();
+                Node fileElement = responses.item(0).getFirstChild();
+                // 
+                Node resourceUrls = fileElement.getChildNodes().item(2);
+                NodeList resourceElements = resourceUrls.getChildNodes(); // file and description as childs
+                Node filePath = resourceElements.item(0); // file at 0 
+                Node authorUrl = fileElement.getChildNodes().item(10); // authorUrl HTML at 10
+                Node permission = fileElement.getChildNodes().item(12); // permission HTML at 12
+                // 
+                model.put(WD_COMMONS_MEDIA_PATH_TYPE_URI, filePath.getTextContent());
+                // model.put(WD_COMMONS_MEDIA_DESCR_TYPE_URI, defaultLanguageDescr.getTextContent());
+                model.put(WD_COMMONS_AUTHOR_HTML_URI, authorUrl.getTextContent());
+                model.put(WD_COMMONS_LICENSE_HTML_URI, permission.getTextContent());
+                log.fine(" --- Wikimedia Commons Response is FINE ---");
+            }
+        } catch (MalformedURLException e) {
+            log.warning("Wikidata Plugin: MalformedURLException ..." + e.getMessage());
+            throw new RuntimeException("Could not find wikimedia commons endpoint.", e);
+        } catch (ParserConfigurationException e) {
+            log.warning("Wikidata Plugin: ParserConfigurationException ..." + e.getMessage());
+            throw new RuntimeException("Could not parse wikimedia commons response.", e);
+        } catch (IOException ioe) {
+            log.severe("\n --- " + ioe.getMessage());
+            throw new RuntimeException("IOException.", ioe);
+        } catch (SAXException ex) {
+            Logger.getLogger(WikidataSearchPlugin.class.getName()).log(Level.SEVERE, null, ex);
         }
-        dumpProcessingController.registerEntityDocumentProcessor(entityProcessor, null, false);
-        try {
-            isCurrentlyImporting = true;
-            dumpProcessingController.processMostRecentJsonDump();
-        } catch (Exception e) {
-            isCurrentlyImporting = false;
-            log.warning("Exception of type " + e.getClass() + " caught silent!");
-            // The timer caused a time out. Continue and finish normally.
-        }
-        entityProcessor.stop();
-    }
-    
-    private String findDumpDirectoryPath() {
-        // ### use Sysetm.getenv() for the best OS independent solution
-        // see http://docs.oracle.com/javase/6/docs/api/java/lang/System.html
-        String filerepo = System.getProperty("dm4.filerepo.path");
-        if (filerepo != null && !filerepo.isEmpty()) {
-            return filerepo + "/";
-        }
-        String userhome = System.getProperty("user.home");
-        if (userhome != null) {
-            return userhome + "/";
-        }
-        return "";
     }
     
 }

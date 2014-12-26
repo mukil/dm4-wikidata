@@ -37,77 +37,6 @@
             <artifactId>deepamehta-files</artifactId>
             <version>4.4</version>
         </dependency>
-        <dependency>
-            <groupId>org.wikidata.wdtk</groupId>
-            <artifactId>wdtk-dumpfiles</artifactId>
-            <version>0.3.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.wikidata.wdtk</groupId>
-            <artifactId>wdtk-datamodel</artifactId>
-            <version>0.3.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.wikidata.wdtk</groupId>
-            <artifactId>wdtk-util</artifactId>
-            <version>0.3.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.wikidata.wdtk</groupId>
-            <artifactId>wdtk-storage</artifactId>
-            <version>0.3.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.json</groupId>
-            <artifactId>org.json</artifactId>
-            <version>chargebee-1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <version>2.3.3</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>2.3.3</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.3.3</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-compress</artifactId>
-            <version>1.7</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.2.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.tukaani</groupId>
-            <artifactId>xz</artifactId>
-            <version>1.5</version>
-        </dependency>
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.17</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>1.7.5</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.5</version>
-        </dependency>
-
     </dependencies>
 
     <build>
@@ -123,25 +52,6 @@
                         <Bundle-SymbolicName>
                             org.deepamehta.wikidata-search
                         </Bundle-SymbolicName>
-                        <Import-Package>
-                            de.deepamehta.core.*, de.deepamehta.plugins.accesscontrol.*, 
-                            org.codehaus.jettison.json.*, !org.w3c.dom.*,
-                            javax.crypto.*, javax.ws.rs.*, javax.xml.*,
-                            org.wikidata.wdtk.storage.*, org.wikidata.wdtk.util.*, 
-                            org.xml.sax.*, org.slf4j.*, org.apache.log4j.*,
-                            !com.ibm.uvm.tools, !com.sun.jdmk.comm,
-                            !javax.jmdns, !javax.jms, !javax.mail, !javax.mail.internet,
-                            !javax.management, !javax.naming, !javax.swing,
-                            !javax.swing.border, !javax.swing.event, !javax.swing.table, 
-                            !javax.swing.text, !javax.swing.tree,
-                        </Import-Package>
-                        <Embed-Dependency>
-                            slf4j-log4j12,slf4j-api,
-                            org.json,xz,log4j,
-                            commons-lang3,commons-compress,
-                            wdtk-dumpfiles,wdtk-datamodel,wdtk-storage,wdtk-util,
-                            jackson-annotations,jackson-core,jackson-databind
-                        </Embed-Dependency>
                     </instructions>
                 </configuration>
             </plugin>
