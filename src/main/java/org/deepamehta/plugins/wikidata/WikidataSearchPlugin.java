@@ -17,10 +17,8 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Iterator;
@@ -40,7 +38,6 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.deepamehta.plugins.wikidata.service.WikidataSearchService;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
@@ -54,7 +51,7 @@ import org.xml.sax.SAXException;
  *
  * @author Malte Reißig (<malte@mikromedia.de>)
  * @website https://github.com/mukil/dm4-wikidata
- * @version 0.0.4-SNAPSHOT
+ * @version 0.0.5-SNAPSHOT
  */
 
 @Path("/wikidata")
@@ -65,7 +62,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     private Logger log = Logger.getLogger(getClass().getName());
 
     private final String DEEPAMEHTA_VERSION = "DeepaMehta 4.4";
-    private final String WIKIDATA_TYPE_SEARCH_VERSION = "0.0.4-SNAPSHOT";
+    private final String WIKIDATA_TYPE_SEARCH_VERSION = "0.0.5-SNAPSHOT";
     private final String CHARSET = "UTF-8";
 
     // --- DeepaMehta 4 URIs
@@ -112,7 +109,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     private final String WD_CHECK_ENTITY_CLAIMS_ENDPOINT =
             "http://www.wikidata.org/w/api.php?action=wbgetclaims&format=json"; // &ungroupedlist=0
     private final String WD_GET_ENTITY_ENDPOINT = "http://www.wikidata.org/w/api.php?action=wbgetentities"
-            + "&props=info%7Csitelinks%2Furls%7Caliases%7Clabels%7Cdescriptions&dir=ascending&format=json";
+            + "&props=info%7Caliases%7Clabels%7Cdescriptions&format=json"; // sitelinks%2Furls%7C
     private final String WD_SEARCH_ENTITY_TYPE_PROPERTY = "property";
     private final String WD_SEARCH_ENTITY_TYPE_ITEM = "item";
     private final String WD_ENTITY_BASE_URI = "org.wikidata.entity.";
@@ -293,7 +290,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         String wikidataId = wikidataItem.getUri().replaceAll(WD_SEARCH_ENTITIY_DATA_URI_PREFIX, "");
         try {
             // 1) ### Authorize request
-            // 2) ### be explicit and add "&rank=normal" to wbgetclaims-call
+            // 2) ### be explicit and add "&rank=normal" to wbgetclaims-call, ### add "&props=references" somewhen
             requestUri = new URL(WD_CHECK_ENTITY_CLAIMS_ENDPOINT + "&entity=" + wikidataId);
             log.fine("Requesting Wikidata Entity Claims: " + requestUri.toString());
             // 2) initiate request
@@ -405,6 +402,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                             entity_composite.put(WD_SEARCH_ENTITY_DESCR_URI, description);
                         }
                         entity_composite.put(DM_WEBBROWSER_URL, url);
+                        // ### fix. aliases add up
                         if (entity_response.has("aliases")) {
                             JSONArray aliases = entity_response.getJSONArray("aliases");
                             for (int a=0; a < aliases.length(); a++) {
@@ -541,7 +539,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             JSONObject result = response.getJSONObject("claims");
             // ### Needs to identify if claims (already imported in DM4) are not yet part of the current wikidata-data
             Iterator properties = result.keys();
-            log.info("Wikidata Plugin is processing all properties part of related CLAIMS");
+            log.info("Wikidata Plugin is processing all properties part of related " + result.length() + " CLAIMS");
             Topic propertyEntity = null;
             while (properties.hasNext()) {
                 String property_id = properties.next().toString();
@@ -748,16 +746,15 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                 log.fine(" --- Wikimedia Commons Response is FINE ---");
             }
         } catch (MalformedURLException e) {
-            log.warning("Wikidata Plugin: MalformedURLException ..." + e.getMessage());
-            throw new RuntimeException("Could not find wikimedia commons endpoint.", e);
+            log.log(Level.SEVERE, "Wikidata Plugin: MalformedURLException ...", e);
         } catch (ParserConfigurationException e) {
-            log.warning("Wikidata Plugin: ParserConfigurationException ..." + e.getMessage());
-            throw new RuntimeException("Could not parse wikimedia commons response.", e);
+            log.log(Level.SEVERE, "Wikidata Plugin: ParserConfigurationException ...", e);
         } catch (IOException ioe) {
-            log.severe("\n --- " + ioe.getMessage());
-            throw new RuntimeException("IOException.", ioe);
+            log.log(Level.SEVERE, "Wikidata Plugin: IOException ...", ioe);
         } catch (SAXException ex) {
-            Logger.getLogger(WikidataSearchPlugin.class.getName()).log(Level.SEVERE, null, ex);
+            log.log(Level.SEVERE, null, ex);
+        } catch (Exception e) {
+            log.log(Level.SEVERE, null , e);
         }
     }
     
