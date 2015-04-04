@@ -739,10 +739,12 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                 Node authorUrl = fileElement.getChildNodes().item(10); // authorUrl HTML at 10
                 Node permission = fileElement.getChildNodes().item(12); // permission HTML at 12
                 // 
+                String authorText = (authorUrl != null) ? authorUrl.getTextContent() : "No author information available.";
+                String permissionText = (permission != null) ? permission.getTextContent() : "No license information available.";
                 model.put(WD_COMMONS_MEDIA_PATH_TYPE_URI, filePath.getTextContent());
                 // model.put(WD_COMMONS_MEDIA_DESCR_TYPE_URI, defaultLanguageDescr.getTextContent());
-                model.put(WD_COMMONS_AUTHOR_HTML_URI, authorUrl.getTextContent());
-                model.put(WD_COMMONS_LICENSE_HTML_URI, permission.getTextContent());
+                model.put(WD_COMMONS_AUTHOR_HTML_URI, authorText);
+                model.put(WD_COMMONS_LICENSE_HTML_URI, permissionText);
                 log.fine(" --- Wikimedia Commons Response is FINE ---");
             }
         } catch (MalformedURLException e) {
