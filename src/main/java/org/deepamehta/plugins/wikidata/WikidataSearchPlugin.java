@@ -533,6 +533,12 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         }
     }
 
+    /**
+     * Fix 1: On each processing delete all outgoing claims and re-create (them) from scratch, this way we
+     * support *deletion* of claims at the remote-site without re-creating the referenced items.
+     * Fix 2: Process qualifierSnaks on each claim (extend migration for that).
+     * Fix 3: Process all references for each claim (simply as URLs?).
+     */
     private void processWikidataClaims(String json_result, Topic wikidataItem, String language_code) {
         try {
             JSONObject response = new JSONObject(json_result);
@@ -547,6 +553,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                 propertyEntity = getOrCreateWikidataEntity(property_id, language_code);
                 // HashMap<String, List<Topic>> all_entities = new HashMap<String, List<Topic>>();
                 JSONArray property_listing = result.getJSONArray(property_id);
+                // ### process all claims properly (delete and then create)
                 for (int i=0; i < property_listing.length(); i++) {
                     // 2) fetch related wikidata entity
                     Topic referencedItemEntity = null;
@@ -622,14 +629,18 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         }
     }
 
-    private Association createWikidataClaimEdge (String claim_guid, Topic one, Topic two, Topic property) {
+    /**
+     * From Topic plays the role of a parent and to topic plays role of a child,
+     * just like in wikidata in the semantics of a *Claim*.
+     */
+    private Association createWikidataClaimEdge(String claim_guid, Topic from, Topic to, Topic property) {
         Association claim = null;
         try {
-            if (!associationExists(WD_ENTITY_CLAIM_EDGE, one, two)) {
+            if (!associationExists(WD_ENTITY_CLAIM_EDGE, from, to)) {
                 // 1) Create \"Wikidata Claim\"-Edge with GUID
                 claim = dms.createAssociation(new AssociationModel(WD_ENTITY_CLAIM_EDGE,
-                    new TopicRoleModel(one.getId(), "dm4.core.default"),
-                    new TopicRoleModel(two.getId(), "dm4.core.default")));
+                    new TopicRoleModel(from.getId(), "dm4.core.parent"),
+                    new TopicRoleModel(to.getId(), "dm4.core.child")));
                 claim.setUri(claim_guid);
                 /** log.info("Created \"Wikidata Claim\" with GUID: " + claim.getUri() +" for \"" + two.getSimpleValue() +
                                 " (property: " + property.getSimpleValue() +
@@ -643,7 +654,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             }
             return claim;
         } catch (Exception e) {
-            log.severe("FAILED to create a \"Claim\" between \""+one.getSimpleValue()+"\" - \""+two.getSimpleValue());
+            log.severe("FAILED to create a \"Claim\" between \""+from.getSimpleValue()+"\" - \""+to.getSimpleValue());
             throw new RuntimeException(e);
         }
     }
