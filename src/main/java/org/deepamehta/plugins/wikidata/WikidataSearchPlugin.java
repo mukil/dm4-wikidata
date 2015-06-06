@@ -21,6 +21,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
@@ -51,7 +52,7 @@ import org.xml.sax.SAXException;
  *
  * @author Malte Reißig (<malte@mikromedia.de>)
  * @website https://github.com/mukil/dm4-wikidata
- * @version 0.0.5-SNAPSHOT
+ * @version 0.0.4.1
  */
 
 @Path("/wikidata")
@@ -270,11 +271,12 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         }
     }
 
+    /** This method handles the "Import topics" command available on all "Wikidata Search Result" topics. */
+
     @GET
     @Path("/check/claims/{id}/{language_code}")
     @Produces(MediaType.APPLICATION_JSON)
     @Override
-    @Transactional
     public Topic loadClaimsAndRelatedWikidataItems(@PathParam("id") long topicId,
             @PathParam("language_code") String language_option) {
 
@@ -543,7 +545,9 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         try {
             JSONObject response = new JSONObject(json_result);
             JSONObject result = response.getJSONObject("claims");
-            // ### Needs to identify if claims (already imported in DM4) are not yet part of the current wikidata-data
+            // Delete all claims going out from this item (me)
+            removeAllClaimsFromThisItem(wikidataItem);
+            // Then re-create all claims going out from this item (this is our "UPDATE")
             Iterator properties = result.keys();
             log.info("Wikidata Plugin is processing all properties part of related " + result.length() + " CLAIMS");
             Topic propertyEntity = null;
@@ -600,6 +604,18 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                         } else {
                             log.warning("Could not access wikidata-text value - json-response EMPTY!");
                         }
+                    } else if (snakDataType.equals("quantity")) {
+                        if (snakDataValue.has("value")) {
+                            JSONObject value = snakDataValue.getJSONObject("value");
+                            if (value.has("amount")) {
+                                String amount = value.getString("amount");
+                                referencedItemEntity = getOrCreateWikidataText(amount, language_code);
+                            } else {
+                               log.warning("Could not access wikidata-text value - AMOUNT EMPTY!");
+                            }
+                        } else {
+                            log.warning("Could not access wikidata-text value - NO VALUE SET!");
+                        }
                     } else {
                         log.warning("Value claimed as " + propertyEntity.getSimpleValue() + " is not of any known type"
                                 + " wikibase-item but \"" + snakDataType +"\" ("+snakDataValue+")");
@@ -611,7 +627,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                             propertyEntity);
                     } else {
                         log.warning("SKIPPED creating claim of type \""+snakDataType+"\" value for "
-                                + "\""+propertyEntity.getSimpleValue()+"\"");
+                                + "\""+propertyEntity.getSimpleValue()+"\" on \"" + wikidataItem.getSimpleValue()+"\"");
                     }
                 }
                 /** Iterator entity_iterator = all_entities.keySet().iterator();
@@ -629,12 +645,48 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         }
     }
 
+    private void removeAllClaimsFromThisItem(Topic wikidataItem) {
+        List<Association> all_claims = wikidataItem.getAssociations();
+        ArrayList<Association> claims_to_be_deleted = new ArrayList();
+        for (Association claim : all_claims) {
+            if (claim.getTypeUri().equals(WD_ENTITY_CLAIM_EDGE)) {
+                if (claim.getRole1().getModel().getRoleTypeUri().equals("dm4.core.default")
+                    && claim.getRole2().getModel().getRoleTypeUri().equals("dm4.core.default")) {
+                    // ### delete _all_ old, un-directed associations invloving me
+                    claims_to_be_deleted.add(claim);
+                }
+                // where "child" is me, incoming assocs using me in their claim, remain
+                if (claim.getRole2().getModel().getRoleTypeUri().equals("dm4.core.parent")
+                    && claim.getRole2().getPlayerId() == wikidataItem.getId()) {
+                    // every claim where i am the "parent" is to be deleted and re-created
+                    claims_to_be_deleted.add(claim);
+                } else if (claim.getRole1().getModel().getRoleTypeUri().equals("dm4.core.parent")
+                    && claim.getRole1().getPlayerId() == wikidataItem.getId()) {
+                    // every claim where i am the "parent" is to be deleted and re-created
+                    claims_to_be_deleted.add(claim);
+                } else {
+                    log.info("> Associaton \""+claim.getSimpleValue()+"\" remains for " + wikidataItem.getUri()
+                            + " from 1: "+claim.getRole1().getPlayer().getSimpleValue()+")"
+                            + " to 2: "+claim.getRole2().getPlayer().getSimpleValue());
+                }
+            }
+        }
+        log.info("> " + claims_to_be_deleted.size() + " claims to be DELETED");
+        DeepaMehtaTransaction dx = dms.beginTx();
+        for (Association edge : claims_to_be_deleted) {
+            dms.deleteAssociation(edge.getId());
+        }
+        dx.success();
+        dx.finish();
+    }
+
     /**
      * From Topic plays the role of a parent and to topic plays role of a child,
      * just like in wikidata in the semantics of a *Claim*.
      */
     private Association createWikidataClaimEdge(String claim_guid, Topic from, Topic to, Topic property) {
         Association claim = null;
+        DeepaMehtaTransaction dx = dms.beginTx();
         try {
             if (!associationExists(WD_ENTITY_CLAIM_EDGE, from, to)) {
                 // 1) Create \"Wikidata Claim\"-Edge with GUID
@@ -652,10 +704,14 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                 dms.updateAssociation(claim.getModel());
                 claim.loadChildTopics();
             }
+            dx.success();
             return claim;
         } catch (Exception e) {
             log.severe("FAILED to create a \"Claim\" between \""+from.getSimpleValue()+"\" - \""+to.getSimpleValue());
+            dx.failure();
             throw new RuntimeException(e);
+        } finally {
+            dx.finish();
         }
     }
 

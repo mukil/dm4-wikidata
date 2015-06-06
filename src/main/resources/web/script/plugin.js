@@ -162,19 +162,21 @@
 
             function get_language_value() {
                 var lang_value = undefined
-                try {
+                if (typeof language_menu !== "undefined") {
                     lang_value = language_menu.get_selection().value
                     return lang_value
-                } catch (e) {
-                    console.error("Please initiate the \"Wikidata search\"-Mode widget before making any requests - "
-                        + " FALLBACK: Now requesting data in EN")
-                    return "en"
                 }
+                console.warn("Please initiate the \"Wikidata search\"-Mode widget before making any requests - "
+                    + " FALLBACK: Now requesting data in EN")
+                return "en"
 
             }
 
             function get_language_name() {
-                return language_menu.get_selection().label
+                if (typeof language_menu !== "undefined") {
+                    return language_menu.get_selection().label
+                }
+                return "English"
             }
 
         }

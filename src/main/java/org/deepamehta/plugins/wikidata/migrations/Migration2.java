@@ -33,11 +33,14 @@ public class Migration2 extends Migration {
     @Override
     public void run() {
 
-        // 1) create \"Wikidata\"-Workspace
+        // 1) create \"Wikidata\"-Workspace (if non-existent)
         TopicModel workspace = new TopicModel(WS_WIKIDATA_URI, "dm4.workspaces.workspace");
-        Topic ws = dms.createTopic(workspace);
-        ws.setSimpleValue("Wikidata");
-        log.info("1) Created WIKIDATA Workspace ..");
+        Topic ws = dms.getTopic("uri", new SimpleValue(WS_WIKIDATA_URI));
+        if (ws == null) {
+            ws = dms.createTopic(workspace);
+            ws.setSimpleValue("Wikidata");
+            log.info("1) Created WIKIDATA Workspace ..");
+        }
         // 2) assign "admin" username to \"Wikidata\"-Workspace
         Topic administrator = dms.getTopic(DEEPAMEHTA_USERNAME_URI, new SimpleValue(DEEPAMEHTA_ADMIN_USERNAME));
         assignWorkspace(administrator);
