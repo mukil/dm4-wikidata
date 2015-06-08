@@ -746,12 +746,21 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     private Topic getOrCreateWikimediaCommonsMediaTopic(String fileName) {
         Topic mediaTopic = dms.getTopic(WD_COMMONS_MEDIA_NAME_TYPE_URI, new SimpleValue(fileName));
         if (mediaTopic == null) { // create new media topic
+            DeepaMehtaTransaction dx = dms.beginTx();
             ChildTopicsModel mediaCompositeModel = new ChildTopicsModel()
                 .put(WD_COMMONS_MEDIA_NAME_TYPE_URI, fileName);
             enrichAboutWikimediaCommonsMetaData(mediaCompositeModel, fileName);
             TopicModel mediaTopicModel = new TopicModel(WD_COMMONS_MEDIA_TYPE_URI, mediaCompositeModel);
-            mediaTopic = dms.createTopic(mediaTopicModel).loadChildTopics();
-            log.info("Created new Wikimedia Commons Media Topic \"" + mediaTopic.getSimpleValue().toString());
+            try {
+                mediaTopic = dms.createTopic(mediaTopicModel).loadChildTopics();
+                log.info("Created new Wikimedia Commons Media Topic \"" + mediaTopic.getSimpleValue().toString());
+                dx.success();
+            } catch (RuntimeException re) {
+                log.log(Level.SEVERE, "Could not create Wikidata Commons Media Topic", re);
+                dx.failure();
+            } finally {
+                dx.finish();
+            }
         } else {
             mediaTopic = mediaTopic.getRelatedTopic("dm4.core.composition", 
                 "dm4.core.child", "dm4.core.parent", WD_COMMONS_MEDIA_TYPE_URI);
