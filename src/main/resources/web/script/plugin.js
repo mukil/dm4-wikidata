@@ -39,17 +39,14 @@
         })
 
         dm4c.add_listener("init", function() {
+            // set window title
+            document.title = "Wikidata Topicmaps UI 0.4.1 / " + document.title
             dm4c.toolbar.searchmode_menu.add_item({label: "Wikidata Search", value: "wikidata-search"})
         })
 
         dm4c.add_listener("init_2", function() {
-            // console.log("Trying to select the wikidata search mode by default for new users of the WTUI.")
-            // ### failed attempt: this does not initiate searchmode widget properly
-            // ### dont know how to do it differently in the webclient
-            // ## dm4c.toolbar.searchmode_menu.close()
-            // ## dm4c.toolbar.searchmode_menu.remove_item("by-text")
-            // ## dm4c.toolbar.searchmode_menu.remove_item("by-type")
-            // dm4c.toolbar.searchmode_menu.select("wikidata-search")
+            dm4c.toolbar.searchmode_menu.select("wikidata-search")
+            dm4c.toolbar.select_searchmode("wikidata-search")
         })
 
         dm4c.add_listener("searchmode_widget", function(searchmode) {

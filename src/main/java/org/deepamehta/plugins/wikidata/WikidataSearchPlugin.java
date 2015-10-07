@@ -38,6 +38,7 @@ import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.deepamehta.plugins.wikidata.service.WikidataSearchService;
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -106,10 +107,10 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     // --- Wikidata Service URIs
 
     private final String WD_SEARCH_ENTITIES_ENDPOINT =
-            "http://www.wikidata.org/w/api.php?action=wbsearchentities&format=json&limit=50";
+            "https://www.wikidata.org/w/api.php?action=wbsearchentities&format=json&limit=50";
     private final String WD_CHECK_ENTITY_CLAIMS_ENDPOINT =
-            "http://www.wikidata.org/w/api.php?action=wbgetclaims&format=json"; // &ungroupedlist=0
-    private final String WD_GET_ENTITY_ENDPOINT = "http://www.wikidata.org/w/api.php?action=wbgetentities"
+            "https://www.wikidata.org/w/api.php?action=wbgetclaims&format=json"; // &ungroupedlist=0
+    private final String WD_GET_ENTITY_ENDPOINT = "https://www.wikidata.org/w/api.php?action=wbgetentities"
             + "&props=info%7Caliases%7Clabels%7Cdescriptions&format=json"; // sitelinks%2Furls%7C
     private final String WD_SEARCH_ENTITY_TYPE_PROPERTY = "property";
     private final String WD_SEARCH_ENTITY_TYPE_ITEM = "item";
@@ -150,7 +151,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         try {
             // 1) fixme: Authorize request
             requestUri = new URL(WD_SEARCH_ENTITIES_ENDPOINT + "&search="+ query +"&language="+ lang +"&type=" + type);
-            log.fine("Wikidata Search Entities Request: " + requestUri.toString());
+            log.info("Wikidata Search Entities Request: " + requestUri.toString());
             // 2) initiate request
             HttpURLConnection connection = (HttpURLConnection) requestUri.openConnection();
             connection.setRequestMethod("GET");
@@ -159,8 +160,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             // 3) check the response
             int httpStatusCode = connection.getResponseCode();
             if (httpStatusCode != HttpURLConnection.HTTP_OK) {
-                throw new WebApplicationException(new Throwable("Error with HTTPConnection."),
-                        Status.INTERNAL_SERVER_ERROR);
+                throw new RuntimeException("Error with HTTPConnection, HTTP Status: " + httpStatusCode);
             }
             // 4) read in the response
             BufferedReader rd = new BufferedReader(new InputStreamReader(connection.getInputStream(), CHARSET));
@@ -170,15 +170,14 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             rd.close();
             // 5) process response
             if (resultBody.toString().isEmpty()) {
-                throw new WebApplicationException(new RuntimeException("Wikidata was silent."),
-                        Status.NO_CONTENT);
+                throw new RuntimeException("Wikidata was silent, HTTP Response: No content!");
             } else {
+                log.fine("Wikidata Search Request Response: " + resultBody.toString());
                 // ..) Create Wikidata Search Bucket
                 ChildTopicsModel bucket_model = new ChildTopicsModel();
                 bucket_model.put(WD_SEARCH_QUERY_URI, query);
                 bucket_model.putRef(WD_LANGUAGE_URI, WD_LANGUAGE_DATA_URI_PREFIX + lang);
                 json_result = resultBody.toString();
-                log.fine("Wikidata Search Request Response: " + json_result);
                 processWikidataEntitySearch(json_result, bucket_model, type, lang);
                 search_bucket = dms.createTopic(new TopicModel(WD_SEARCH_BUCKET_URI, bucket_model));
                 // workaround: addRef does not (yet) fetchComposite, so fetchComposite=true
@@ -188,14 +187,12 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             search_bucket.loadChildTopics(); // load all child topics
         } catch (MalformedURLException e) {
             log.warning("Wikidata Plugin: MalformedURLException ..." + e.getMessage());
-            throw new RuntimeException("Could not find wikidata endpoint.", e);
+            throw new RuntimeException("Could not find wikidata endpoint - " + requestUri.toString(), e);
         } catch (IOException ioe) {
+            log.warning("Wikidata Plugin: IOException ..." + ioe.getMessage());
             throw new WebApplicationException(new Throwable(ioe), Status.BAD_REQUEST);
-        } catch (Exception e) {
-            throw new WebApplicationException(new Throwable(e), Status.INTERNAL_SERVER_ERROR);
-        } finally {
-            return search_bucket;
         }
+        return search_bucket;
     }
 
     @GET
@@ -226,8 +223,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             // 3) check the response
             int httpStatusCode = connection.getResponseCode();
             if (httpStatusCode != HttpURLConnection.HTTP_OK) {
-                throw new WebApplicationException(new Throwable("Error with HTTPConnection."),
-                        Status.INTERNAL_SERVER_ERROR);
+                throw new RuntimeException("Error with HTTPConnection, HTTP Status: " + httpStatusCode);
             }
             // 4) read in the response
             BufferedReader rd = new BufferedReader(new InputStreamReader(connection.getInputStream(), CHARSET));
@@ -237,8 +233,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             rd.close();
             // 5) process response
             if (resultBody.toString().isEmpty()) {
-                throw new WebApplicationException(new RuntimeException("Wikidata was silent."),
-                        Status.NO_CONTENT);
+                throw new RuntimeException("Wikidata was silent, HTTP Response: No content!");
             } else {
                 // 6) Create or Update Wikidata Search Entity
                 json_result = resultBody.toString();
@@ -259,16 +254,13 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             }
         } catch (MalformedURLException e) {
             log.warning("Wikidata Plugin: MalformedURLException ..." + e.getMessage());
-            throw new RuntimeException("Could not find wikidata endpoint.", e);
+            throw new RuntimeException("Could not find wikidata endpoint  - " + requestUri.toString(), e);
         } catch (IOException ioe) {
             throw new WebApplicationException(new Throwable(ioe), Status.BAD_REQUEST);
         } catch (JSONException je) {
             throw new WebApplicationException(new Throwable(je), Status.INTERNAL_SERVER_ERROR);
-        } catch (Exception e) {
-            throw new WebApplicationException(new Throwable(e), Status.INTERNAL_SERVER_ERROR);
-        } finally {
-            return entity;
         }
+        return entity;
     }
 
     /** This method handles the "Import topics" command available on all "Wikidata Search Result" topics. */
@@ -303,8 +295,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             // 3) check the response
             int httpStatusCode = connection.getResponseCode();
             if (httpStatusCode != HttpURLConnection.HTTP_OK) {
-                throw new WebApplicationException(new Throwable("Error with HTTPConnection."),
-                        Status.INTERNAL_SERVER_ERROR);
+                throw new RuntimeException("Error with HTTPConnection, HTTP Status: " + httpStatusCode);
             }
             // 4) read in the response
             BufferedReader rd = new BufferedReader(new InputStreamReader(connection.getInputStream(), CHARSET));
@@ -314,8 +305,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             rd.close();
             // 5) process response
             if (resultBody.toString().isEmpty()) {
-                throw new WebApplicationException(new RuntimeException("Wikidata was silent."),
-                        Status.NO_CONTENT);
+                throw new RuntimeException("Wikidata was silent, HTTP Response: No content!");
             } else {
                 json_result = resultBody.toString();
                 log.fine("Wikidata Claim Request Response: " + json_result);
@@ -325,14 +315,11 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             wikidataItem.loadChildTopics(); // load all child topics
         } catch (MalformedURLException e) {
             log.warning("Wikidata Plugin: MalformedURLException ..." + e.getMessage());
-            throw new RuntimeException("Could not find wikidata endpoint.", e);
+            throw new RuntimeException("Could not find wikidata endpoint - " + requestUri.toString(), e);
         } catch (IOException ioe) {
             throw new WebApplicationException(new Throwable(ioe), Status.BAD_REQUEST);
-        } catch (Exception e) {
-            throw new WebApplicationException(new Throwable(e), Status.INTERNAL_SERVER_ERROR);
-        } finally {
-            return wikidataItem;
         }
+        return wikidataItem;
     }
 
     @GET
@@ -445,16 +432,16 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             TopicModel entity_model = new TopicModel(WD_SEARCH_ENTITIY_DATA_URI_PREFIX + id,
                     WD_SEARCH_ENTITY_URI, entity_composite);
             entity = dms.createTopic(entity_model);
-            log.fine("Wikidata Search Entity Created (" +
-                entity_composite.getString(WD_SEARCH_ENTITY_TYPE_URI)+ "): \"" + entity.getSimpleValue() +"\" - FINE!");
+            log.info("Wikidata Search Entity Created (" +
+                entity_composite.getString(WD_SEARCH_ENTITY_TYPE_URI)+ "): \"" + entity.getSimpleValue() +"\" "+entity.getId()+" - FINE!");
             tx.success();
-        } catch (Exception ex) {
-            log.warning("FAILED to create a \"Wikidata Search Entity\" caused by " + ex.getMessage());
-            tx.failure();
-        } finally {
             tx.finish();
-            return entity;
+        } catch (Exception ex) {
+            log.warning("FAILED to create a \"Wikidata Search Entity\" caused by "
+                    + ex.getMessage() + "\n" + ex.getCause().toString());
+            tx.failure();
         }
+        return entity;
     }
 
     private Topic updateWikidataEntity(Topic entity, JSONObject entity_response, String lang) {
@@ -467,12 +454,11 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             log.fine("Wikidata Search Entity Updated (" +
                 entity_composite.getString(WD_SEARCH_ENTITY_TYPE_URI)+ "): \"" + entity.getSimpleValue() +"\" - FINE!");
             tx.success();
+            tx.finish();
             return entity;
         } catch (Exception ex) {
             log.warning("FAILED to UPDATE \"Wikidata Search Entity\" caused by " + ex.getMessage());
             tx.failure();
-        } finally {
-            tx.finish();
         }
         return null;
     }
@@ -705,13 +691,12 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                 claim.loadChildTopics();
             }
             dx.success();
+            dx.finish();
             return claim;
         } catch (Exception e) {
             log.severe("FAILED to create a \"Claim\" between \""+from.getSimpleValue()+"\" - \""+to.getSimpleValue());
             dx.failure();
             throw new RuntimeException(e);
-        } finally {
-            dx.finish();
         }
     }
 
@@ -734,12 +719,12 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                         + "(" + lang + ") - Re-using it!");
             } **/
             tx.success();
+            tx.finish();
             return textValue;
         } catch (Exception ex) {
+            tx.failure();
             log.warning("FAILURE during creating a wikidata value topic: " + ex.getLocalizedMessage());
             throw new RuntimeException(ex);
-        } finally {
-            tx.finish();
         }
     }
     
@@ -755,11 +740,10 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                 mediaTopic = dms.createTopic(mediaTopicModel).loadChildTopics();
                 log.info("Created new Wikimedia Commons Media Topic \"" + mediaTopic.getSimpleValue().toString());
                 dx.success();
+                dx.finish();
             } catch (RuntimeException re) {
                 log.log(Level.SEVERE, "Could not create Wikidata Commons Media Topic", re);
                 dx.failure();
-            } finally {
-                dx.finish();
             }
         } else {
             mediaTopic = mediaTopic.getRelatedTopic("dm4.core.composition", 
@@ -786,8 +770,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             // 3) check the response
             int httpStatusCode = connection.getResponseCode();
             if (httpStatusCode != HttpURLConnection.HTTP_OK) {
-                throw new WebApplicationException(new Throwable("Error with HTTPConnection."),
-                        Status.INTERNAL_SERVER_ERROR);
+                throw new RuntimeException("Error with HTTPConnection, HTTP Status: " + httpStatusCode);
             }
             // 4) read in the response
             BufferedReader rd = new BufferedReader(new InputStreamReader(connection.getInputStream(), CHARSET));
@@ -797,8 +780,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             rd.close();
             // 5) process response
             if (resultBody.toString().isEmpty()) {
-                throw new WebApplicationException(new RuntimeException("Wikidata was silent."),
-                        Status.NO_CONTENT);
+                throw new RuntimeException("Wikidata was silent, HTTP Response: No content!");
             } else {
                 DocumentBuilder builder;
                 Document document;
@@ -831,7 +813,8 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             log.log(Level.SEVERE, "Wikidata Plugin: IOException ...", ioe);
         } catch (SAXException ex) {
             log.log(Level.SEVERE, null, ex);
-        } catch (Exception e) {
+
+        } catch (DOMException e) {
             log.log(Level.SEVERE, null , e);
         }
     }
