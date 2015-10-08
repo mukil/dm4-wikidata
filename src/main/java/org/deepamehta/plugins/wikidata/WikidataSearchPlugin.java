@@ -199,6 +199,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     @Path("/{entityId}/{language_code}")
     @Produces(MediaType.APPLICATION_JSON)
     @Override
+    @Transactional
     public Topic getOrCreateWikidataEntity(@PathParam("entityId") String entityId,
         @PathParam("language_code") String language_code) {
         String json_result = "";
@@ -269,6 +270,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     @Path("/check/claims/{id}/{language_code}")
     @Produces(MediaType.APPLICATION_JSON)
     @Override
+    @Transactional
     public Topic loadClaimsAndRelatedWikidataItems(@PathParam("id") long topicId,
             @PathParam("language_code") String language_option) {
 
@@ -543,6 +545,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             JSONObject result = response.getJSONObject("claims");
             // Delete all claims going out from this item (me)
             removeAllClaimsFromThisItem(wikidataItem);
+            wikidataItem = dms.getTopic(wikidataItem.getId());
             // Then re-create all claims going out from this item (this is our "UPDATE")
             Iterator properties = result.keys();
             log.info("Wikidata Plugin is processing all properties part of related " + result.length() + " CLAIMS");
@@ -653,27 +656,30 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                 }
                 // where "child" is me, incoming assocs using me in their claim, remain
                 if (claim.getRole2().getModel().getRoleTypeUri().equals("dm4.core.parent")
-                    && claim.getRole2().getPlayerId() == wikidataItem.getId()) {
-                    // every claim where i am the "parent" is to be deleted and re-created
+                    && claim.getRole2().getPlayerId() == wikidataItem.getId()
+                    || claim.getRole1().getModel().getRoleTypeUri().equals("dm4.core.parent") &&
+                        claim.getRole1().getPlayerId() == wikidataItem.getId()) {
+                    // every "claim" where i am the "parent" is to be deleted and re-created
                     claims_to_be_deleted.add(claim);
-                } else if (claim.getRole1().getModel().getRoleTypeUri().equals("dm4.core.parent")
-                    && claim.getRole1().getPlayerId() == wikidataItem.getId()) {
-                    // every claim where i am the "parent" is to be deleted and re-created
-                    claims_to_be_deleted.add(claim);
-                } else {
-                    log.info("> Associaton \""+claim.getSimpleValue()+"\" remains for " + wikidataItem.getUri()
-                            + " from 1: "+claim.getRole1().getPlayer().getSimpleValue()+")"
-                            + " to 2: "+claim.getRole2().getPlayer().getSimpleValue());
                 }
             }
         }
         log.info("> " + claims_to_be_deleted.size() + " claims to be DELETED");
-        DeepaMehtaTransaction dx = dms.beginTx();
         for (Association edge : claims_to_be_deleted) {
-            dms.deleteAssociation(edge.getId());
+            DeepaMehtaTransaction dx = dms.beginTx();
+            try {
+                log.info("> Associaton \""+edge.getSimpleValue()+"\" is deleted (" + edge.getUri() + ")"
+                    + " from 1: \""+edge.getRole1().getPlayer().getSimpleValue()+"\" ==> "
+                    + " to 2: \""+edge.getRole2().getPlayer().getSimpleValue() + "\"");
+                dms.deleteAssociation(edge.getId());
+                dx.success();
+            } catch (Exception e) {
+                dx.failure();
+                throw new RuntimeException(e);
+            } finally {
+                dx.finish();
+            }
         }
-        dx.success();
-        dx.finish();
     }
 
     /**
