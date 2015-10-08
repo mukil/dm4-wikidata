@@ -214,7 +214,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             // 1) fixme: Authorize request
             // &sites=dewiki&&languages=de
             requestUri = new URL(WD_GET_ENTITY_ENDPOINT + "&ids="+ entityId + "&languages=" + language_code);
-            log.fine("Requesting Wikidata Entity Details " + requestUri.toString());
+            log.fine("Requesting Wikidata Entity Details: " + requestUri.toString());
             // 2) initiate request
             HttpURLConnection connection = (HttpURLConnection) requestUri.openConnection();
             connection.setRequestMethod("GET");
@@ -250,7 +250,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                     // Updates labels, descriptions, aliases, url and (query) language
                     entity = updateWikidataEntity(existingEntity, response_entity, language_code);
                 }
-                entity.loadChildTopics(); // load all child topics
+                entity.loadChildTopics();
             }
         } catch (MalformedURLException e) {
             log.warning("Wikidata Plugin: MalformedURLException ..." + e.getMessage());
@@ -417,8 +417,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                 }
             }
         } catch (JSONException ex) {
-            log.warning("Wikidata Plugin: JSONException during processing a wikidata entity search response. "
-                    + ex.getMessage());
+            throw new RuntimeException(ex);
         }
     }
 
@@ -433,15 +432,15 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                     WD_SEARCH_ENTITY_URI, entity_composite);
             entity = dms.createTopic(entity_model);
             log.info("Wikidata Search Entity Created (" +
-                entity_composite.getString(WD_SEARCH_ENTITY_TYPE_URI)+ "): \"" + entity.getSimpleValue() +"\" "+entity.getId()+" - FINE!");
+                entity_composite.getString(WD_SEARCH_ENTITY_TYPE_URI)+ "): \"" +
+                entity.getSimpleValue() +"\" "+entity.getId()+" - FINE!");
             tx.success();
             tx.finish();
+            return entity;
         } catch (Exception ex) {
-            log.warning("FAILED to create a \"Wikidata Search Entity\" caused by "
-                    + ex.getMessage() + "\n" + ex.getCause().toString());
             tx.failure();
+            throw new RuntimeException(ex);
         }
-        return entity;
     }
 
     private Topic updateWikidataEntity(Topic entity, JSONObject entity_response, String lang) {
@@ -457,14 +456,13 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             tx.finish();
             return entity;
         } catch (Exception ex) {
-            log.warning("FAILED to UPDATE \"Wikidata Search Entity\" caused by " + ex.getMessage());
             tx.failure();
+            throw new RuntimeException(ex);
         }
-        return null;
     }
 
     private ChildTopicsModel buildWikidataEntityModel(JSONObject entity_response, String lang) {
-        ChildTopicsModel entity_composite = new ChildTopicsModel();
+        ChildTopicsModel entity_composite = null;
         try {
             String id = entity_response.getString("id");
             String type = entity_response.getString("type");
@@ -472,26 +470,39 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             // main label
             if (entity_response.has("labels")) {
                 JSONObject labels = entity_response.getJSONObject("labels");
-                JSONObject languaged_label = labels.getJSONObject(lang);
-                String label = languaged_label.getString("value");
-                entity_composite.put(WD_SEARCH_ENTITY_LABEL_URI, label);
+                JSONObject languaged_label = null;
+                if (labels.has(lang)) {
+                    languaged_label = labels.getJSONObject(lang);
+                    String label = languaged_label.getString("value");
+                    entity_composite.put(WD_SEARCH_ENTITY_LABEL_URI, label);
+                } else {
+                    log.warning("No label found for language \"" + lang + "\" and id " + id);
+                }
             }
             // main description
             if (entity_response.has("descriptions")) {
                 JSONObject descriptions = entity_response.getJSONObject("descriptions");
-                JSONObject languaged_descr = descriptions.getJSONObject(lang);
-                String description = languaged_descr.getString("value");
-                entity_composite.put(WD_SEARCH_ENTITY_DESCR_URI, description);
+                JSONObject languaged_descr = null;
+                if (descriptions.has(lang)) {
+                    languaged_descr = descriptions.getJSONObject(lang);
+                    String description = languaged_descr.getString("value");
+                    entity_composite.put(WD_SEARCH_ENTITY_DESCR_URI, description);
+                } else {
+                    log.warning("No description found for language \"" + lang + "\" and id " + id);
+                }
             }
             // aliases
             if (entity_response.has("aliases")) {
                 JSONObject aliases = entity_response.getJSONObject("aliases");
-                JSONArray languaged_aliases = aliases.getJSONArray(lang);
-                for (int a=0; a < languaged_aliases.length(); a++) {
-                    JSONObject alias_object = languaged_aliases.getJSONObject(a);
-                    String alias = alias_object.getString("value");
-                    entity_composite.add(WD_SEARCH_ENTITY_ALIAS_URI,
-                        new TopicModel(WD_SEARCH_ENTITY_ALIAS_URI, new SimpleValue(alias)));
+                JSONArray languaged_aliases = null;
+                if (aliases.has(lang)) {
+                    languaged_aliases = aliases.getJSONArray(lang);
+                    for (int a=0; a < languaged_aliases.length(); a++) {
+                        JSONObject alias_object = languaged_aliases.getJSONObject(a);
+                        String alias = alias_object.getString("value");
+                        entity_composite.add(WD_SEARCH_ENTITY_ALIAS_URI,
+                            new TopicModel(WD_SEARCH_ENTITY_ALIAS_URI, new SimpleValue(alias)));
+                    }
                 }
             }
             // set wikidata url
@@ -516,7 +527,6 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             entity_composite.put(WD_SEARCH_ENTITY_TYPE_URI, type);
             return entity_composite;
         } catch (JSONException jex) {
-            log.warning("JSONException during build up of the search-entities composite model");
             throw new RuntimeException(jex);
         }
     }
