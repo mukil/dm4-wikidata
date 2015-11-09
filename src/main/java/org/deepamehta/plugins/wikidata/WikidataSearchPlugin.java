@@ -651,16 +651,22 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             if (claim.getTypeUri().equals(WD_ENTITY_CLAIM_EDGE)) {
                 if (claim.getRole1().getModel().getRoleTypeUri().equals("dm4.core.default")
                     && claim.getRole2().getModel().getRoleTypeUri().equals("dm4.core.default")) {
-                    // ### delete _all_ old, un-directed associations invloving me
+                    // just delete _all_ old, un-directed associations invloving me (to re-import them with direction)
                     claims_to_be_deleted.add(claim);
                 }
-                // where "child" is me, incoming assocs using me in their claim, remain
-                if (claim.getRole2().getModel().getRoleTypeUri().equals("dm4.core.parent")
-                    && claim.getRole2().getPlayerId() == wikidataItem.getId()
-                    || claim.getRole1().getModel().getRoleTypeUri().equals("dm4.core.parent") &&
-                        claim.getRole1().getPlayerId() == wikidataItem.getId()) {
-                    // every "claim" where i am the "parent" is to be deleted and re-created
-                    claims_to_be_deleted.add(claim);
+                // every "claim" where i am the "parent" is to be deleted and re-created
+                if ((claim.getRole2().getModel().getRoleTypeUri().equals("dm4.core.parent")
+                    && claim.getRole2().getPlayerId() == wikidataItem.getId())
+                    || (claim.getRole1().getModel().getRoleTypeUri().equals("dm4.core.parent") &&
+                        claim.getRole1().getPlayerId() == wikidataItem.getId())) {
+                    if (!(claim.getRole2().getPlayerId() == wikidataItem.getId() && // ### cannot remove association to one-self
+                          claim.getRole1().getPlayerId() == wikidataItem.getId())) {
+                        claims_to_be_deleted.add(claim);
+                    } else {
+                        // ### log command to investigate database with a corrupt db (that is topics with
+                        // self-referential associations)
+                        log.warning("IDENTIFIED association to one-self, skip removal cause it would throw an Error");
+                    }
                 }
             }
         }
@@ -674,7 +680,6 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                 dms.deleteAssociation(edge.getId());
                 dx.success();
             } catch (Exception e) {
-                dx.failure();
                 throw new RuntimeException(e);
             } finally {
                 dx.finish();
@@ -690,7 +695,8 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         Association claim = null;
         DeepaMehtaTransaction dx = dms.beginTx();
         try {
-            if (!associationExists(WD_ENTITY_CLAIM_EDGE, from, to)) {
+            if (!associationExists(WD_ENTITY_CLAIM_EDGE, from, to)
+                && (to.getId() != from.getId())) { // ### dm4 does not allow self-referential associations
                 // 1) Create \"Wikidata Claim\"-Edge with GUID
                 claim = dms.createAssociation(new AssociationModel(WD_ENTITY_CLAIM_EDGE,
                     new TopicRoleModel(from.getId(), "dm4.core.parent"),
