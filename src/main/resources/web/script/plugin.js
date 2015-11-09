@@ -19,7 +19,7 @@
 
         dm4c.add_listener('topic_commands', function (topic) {
             // check if user is authenticated
-            if (!dm4c.has_create_permission('org.deepamehta.wikidata.search_bucket')) {
+            if (!dm4c.get_plugin("de.deepamehta.accesscontrol").get_username()) {
                 return
             }
             var commands = []
@@ -40,24 +40,19 @@
 
         dm4c.add_listener("init", function() {
             // set window title
-            document.title = "Wikidata Topicmaps UI 0.4.1 / " + document.title
-            dm4c.toolbar.searchmode_menu.add_item({label: "Wikidata Search", value: "wikidata-search"})
+            document.title = "Wikidata Topicmaps UI 0.4.2-SNAPSHOT / " + document.title
         })
 
         dm4c.add_listener("init_2", function() {
-            dm4c.toolbar.searchmode_menu.select("wikidata-search")
             dm4c.toolbar.select_searchmode("wikidata-search")
         })
 
-        dm4c.add_listener("searchmode_widget", function(searchmode) {
+        /** Wikidata searchmode implementation */
+        dm4c.toolbar.add_searchmode("wikidata-search", function () {
 
-            if (searchmode == "wikidata-search") {
+            this.label = "Wikidata Search"
 
-                /** check if user is authenticated
-                if (!dm4c.has_create_permission('org.deepamehta.wikidata.search_bucket')) {
-                    return
-                } **/
-
+            this.widget = function() {
                 // enable search button
                 dm4c.toolbar.search_button.button("enable")
 
@@ -86,25 +81,19 @@
 
                 }
                 language_menu.select("en")
-                // ### $('.workspace-widget').append('<span>Language</span>')
-                // ### $('.workspace-widget').append(language_menu.dom) //
                 // append elements to DOM
                 $container.append(search_type_menu.dom).append(language_menu.dom).append($input_field)
 
                 // register ENTER handler
                 dm4c.on_return_key($input_field, function() {
-                    dm4c.do_search("wikidata-search")
+                    dm4c.toolbar.do_search()
                 })
-
                 return $container
+
             }
 
-        })
-
-        dm4c.add_listener("search", function(searchmode) {
-
-            if (searchmode == "wikidata-search") {
-
+            this.search = function() {
+                //
                 var search_value = $('input.wikidata-type-search').val()
                     search_value = search_value.replace(" ", "+")
                     search_value = search_value.replace(" ", "+")
@@ -112,25 +101,26 @@
                     showSpinningWheel()
                 if (search_value !== "" && search_value !== " ") {
                     return dm4c.restc.request("GET", "/wikidata/search/" + get_search_type_value() + "/"
-                        + search_value + '/' + get_language_value()) // this request blocks the Browser/UI .. 
+                        + search_value + '/' + get_language_value()) // this request blocks the Browser/UI ..
+                }
+
+                function get_language_value() {
+                    return language_menu.get_selection().value
+                }
+
+                function get_search_type_value() {
+                    return search_type_menu.get_selection().value
                 }
             }
-
-            function get_language_value() {
-                return language_menu.get_selection().value
-            }
-
-            function get_search_type_value() {
-                return search_type_menu.get_selection().value
-            }
-
         })
 
+        /** GUI Helper method */
         function showSpinningWheel () {
             $('#page-content').html('<img src="/org.deepamehta.wikidata-search/images/ajax-loader.gif" '
                 + ' class="wikidata-loading" />')
         }
 
+        /** Topic command implementation for "Import Claims" */
         function importClaimedItems () {
 
             var requestUri = '/wikidata/check/claims/' + dm4c.selected_object.id  + '/' + get_language_value()

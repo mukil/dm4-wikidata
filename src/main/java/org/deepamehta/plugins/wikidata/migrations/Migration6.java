@@ -3,8 +3,12 @@ package org.deepamehta.plugins.wikidata.migrations;
 import de.deepamehta.core.AssociationType;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.TopicType;
+import de.deepamehta.core.Type;
 import de.deepamehta.core.model.*;
+import de.deepamehta.core.service.Inject;
 import de.deepamehta.core.service.Migration;
+import de.deepamehta.plugins.workspaces.WorkspacesService;
+
 import java.util.logging.Logger;
 
 
@@ -29,18 +33,25 @@ public class Migration6 extends Migration {
     private final static String WD_COMMONS_MEDIA_TYPE_URI = "org.deepamehta.wikidata.commons_media";
     private final static String WD_GLOBE_COORDINATE_TYPE_URI = "org.deepamehta.wikidata.globe_coordinate";
 
+    private long workspaceId = 0;
+
+    @Inject
+    private WorkspacesService wsService = null;
+
     @Override
     public void run() {
 
+        // 0) Initialize wikidata workspace id
+        workspaceId = wsService.getWorkspace(WS_WIKIDATA_URI).getId();
         // 1) Assign all new wikidata types to the \"Wikidata\"-Workspace
         AssociationType claim = dms.getAssociationType(WD_CLAIM_EDGE_TYPE_URI);
-        assignWorkspace(claim);
+        assignTypeWorkspace(claim);
         TopicType coordinate = dms.getTopicType(WD_GLOBE_COORDINATE_TYPE_URI);
-        assignWorkspace(coordinate);
+        assignTypeWorkspace(coordinate);
         TopicType commons_media = dms.getTopicType(WD_COMMONS_MEDIA_TYPE_URI);
-        assignWorkspace(commons_media);
+        assignTypeWorkspace(commons_media);
         TopicType text = dms.getTopicType(WD_TEXT_TYPE_URI);
-        assignWorkspace(text);
+        assignTypeWorkspace(text);
         log.info("1) Assigned \"Wikidata Text\", \"Wikidata Commons Media\", \"Wikidata Globe Coordinate\" "
                 + "to \"Wikidata\"-Workspace");
         // 2) Make \"Wikidata Search Entity\" (type=property) part of each \"Wikidata Claim\"-Edge
@@ -58,12 +69,8 @@ public class Migration6 extends Migration {
 
     // === Workspace ===
 
-    private void assignWorkspace(Topic topic) {
-        Topic defaultWorkspace = dms.getTopic("uri", new SimpleValue(WS_WIKIDATA_URI));
-        dms.createAssociation(new AssociationModel("dm4.core.aggregation",
-            new TopicRoleModel(topic.getId(), "dm4.core.parent"),
-            new TopicRoleModel(defaultWorkspace.getId(), "dm4.core.child")
-        ));
+    private void assignTypeWorkspace(Type topic) {
+        wsService.assignTypeToWorkspace(topic, workspaceId);
     }
 
 }

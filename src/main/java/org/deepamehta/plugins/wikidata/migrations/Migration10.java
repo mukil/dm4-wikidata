@@ -2,8 +2,12 @@ package org.deepamehta.plugins.wikidata.migrations;
 
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.TopicType;
+import de.deepamehta.core.Type;
 import de.deepamehta.core.model.*;
+import de.deepamehta.core.service.Inject;
 import de.deepamehta.core.service.Migration;
+import de.deepamehta.plugins.workspaces.WorkspacesService;
+
 import java.util.logging.Logger;
 
 
@@ -28,22 +32,29 @@ public class Migration10 extends Migration {
     private final String WD_COMMONS_AUTHOR_HTML_URI = "org.deepamehta.wikidata.commons_author_html";
     private final String WD_COMMONS_LICENSE_HTML_URI = "org.deepamehta.wikidata.commons_license_html";
 
+    private long workspaceId = 0;
+
+    @Inject
+    private WorkspacesService wsService = null;
+
     @Override
     public void run() {
 
+        // 0) Initialize wikidata workspace id
+        workspaceId = wsService.getWorkspace(WS_WIKIDATA_URI).getId();
         // 1) Assign all new wikidata types to the \"Wikidata\"-Workspace
         TopicType media_name = dms.getTopicType(WD_COMMONS_MEDIA_NAME_TYPE_URI);
-        assignWorkspace(media_name);
+        assignTypeWorkspace(media_name);
         TopicType media_path = dms.getTopicType(WD_COMMONS_MEDIA_PATH_TYPE_URI);
-        assignWorkspace(media_path);
+        assignTypeWorkspace(media_path);
         TopicType media_type = dms.getTopicType(WD_COMMONS_MEDIA_TYPE_TYPE_URI);
-        assignWorkspace(media_type);
+        assignTypeWorkspace(media_type);
         TopicType media_descr = dms.getTopicType(WD_COMMONS_MEDIA_DESCR_TYPE_URI);
-        assignWorkspace(media_descr);
+        assignTypeWorkspace(media_descr);
         TopicType license_name = dms.getTopicType(WD_COMMONS_AUTHOR_HTML_URI);
-        assignWorkspace(license_name);
+        assignTypeWorkspace(license_name);
         TopicType license_info = dms.getTopicType(WD_COMMONS_LICENSE_HTML_URI);
-        assignWorkspace(license_info);
+        assignTypeWorkspace(license_info);
         log.info("1) Assigned alle \"Wikimedia Commons ***\" child-types to \"Wikidata\"-Workspace");
         // 2) Remove (old, unusable) File Association Definion from \"Wikimedia Commons Media\"-Type
         TopicType commonsMedia = dms.getTopicType(WD_COMMONS_MEDIA_TYPE_URI);
@@ -66,12 +77,9 @@ public class Migration10 extends Migration {
 
     // === Workspace ===
 
-    private void assignWorkspace(Topic topic) {
-        Topic defaultWorkspace = dms.getTopic("uri", new SimpleValue(WS_WIKIDATA_URI));
-        dms.createAssociation(new AssociationModel("dm4.core.aggregation",
-            new TopicRoleModel(topic.getId(), "dm4.core.parent"),
-            new TopicRoleModel(defaultWorkspace.getId(), "dm4.core.child")
-        ));
+
+    private void assignTypeWorkspace(Type topic) {
+        wsService.assignTypeToWorkspace(topic, workspaceId);
     }
 
 }

@@ -3,7 +3,6 @@ package org.deepamehta.plugins.wikidata.service;
 
 import de.deepamehta.core.RelatedAssociation;
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.service.PluginService;
 import de.deepamehta.core.service.ResultList;
 
 /**
@@ -16,7 +15,7 @@ import de.deepamehta.core.service.ResultList;
  * @website https://github.com/mukil/dm4-wikidata
  * @version 0.0.4-SNAPSHOT
  */
-public interface WikidataSearchService extends PluginService {
+public interface WikidataSearchService {
 
     /**
      *  This method searches all wikidata entities by text and the given language code.

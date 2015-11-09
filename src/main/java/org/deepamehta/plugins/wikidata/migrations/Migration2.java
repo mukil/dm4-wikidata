@@ -6,7 +6,12 @@ import de.deepamehta.core.model.AssociationModel;
 import de.deepamehta.core.model.SimpleValue;
 import de.deepamehta.core.model.TopicModel;
 import de.deepamehta.core.model.TopicRoleModel;
+import de.deepamehta.core.service.Inject;
 import de.deepamehta.core.service.Migration;
+import de.deepamehta.core.service.accesscontrol.SharingMode;
+import de.deepamehta.plugins.accesscontrol.AccessControlService;
+import de.deepamehta.plugins.workspaces.WorkspacesService;
+
 import java.util.logging.Logger;
 
 
@@ -30,41 +35,37 @@ public class Migration2 extends Migration {
 
     private final String WS_WIKIDATA_URI = "org.deepamehta.workspaces.wikidata";
 
+    @Inject
+    private AccessControlService acService = null;
+
+    @Inject
+    private WorkspacesService wsService = null;
+
     @Override
     public void run() {
 
         // 1) create \"Wikidata\"-Workspace (if non-existent)
-        TopicModel workspace = new TopicModel(WS_WIKIDATA_URI, "dm4.workspaces.workspace");
-        Topic ws = dms.getTopic("uri", new SimpleValue(WS_WIKIDATA_URI));
-        if (ws == null) {
-            ws = dms.createTopic(workspace);
-            ws.setSimpleValue("Wikidata");
+        Topic wdWorkspace = null;
+        try {
+            wdWorkspace = wsService.getWorkspace(WS_WIKIDATA_URI);
+        } catch (Exception e) {
+            wdWorkspace = wsService.createWorkspace("Wikidata", WS_WIKIDATA_URI, SharingMode.PUBLIC);
             log.info("1) Created WIKIDATA Workspace ..");
         }
-        // 2) assign "admin" username to \"Wikidata\"-Workspace
-        Topic administrator = dms.getTopic(DEEPAMEHTA_USERNAME_URI, new SimpleValue(DEEPAMEHTA_ADMIN_USERNAME));
-        assignWorkspace(administrator);
-        log.info("2) Assigned admin to WIKIDATA Workspace ..");
-        // 3) assign all types to our new workspace
+        if (wdWorkspace == null) throw new RuntimeException("Creating Wikidata Workspace FAILED!");
+        acService.setWorkspaceOwner(wdWorkspace, DEEPAMEHTA_ADMIN_USERNAME);
+        // 2) assign all types to our new workspace
         TopicType searchType = dms.getTopicType(WD_SEARCH_BUCKET);
         TopicType seachEntity = dms.getTopicType(WD_SEARCH_ENTITY);
         TopicType languageCode = dms.getTopicType(WD_ISO_LANGUAGE_CODE);
-        assignWorkspace(searchType);
-        assignWorkspace(seachEntity);
-        log.info("3) Assigned Wikidata Search Types to \"Wikidata\"-Workspace ..");
-        assignWorkspace(languageCode);
-        log.info("4) Assigned Wikidata Language Type to \"Wikidata\"-Workspace ..");
+        wsService.assignTypeToWorkspace(searchType, wdWorkspace.getId());
+        wsService.assignTypeToWorkspace(seachEntity, wdWorkspace.getId());
+        wsService.assignTypeToWorkspace(languageCode, wdWorkspace.getId());
+        log.info("2) Assigned Wikidata Search & Language Type to \"Wikidata\"-Workspace ..");
+        // 3) create membership for "admin" in \"Wikidata\"-Workspace
+        // acService.createMembership(DEEPAMEHTA_ADMIN_USERNAME, wdWorkspace.getId());
+        // log.info("3) Created membership for " + DEEPAMEHTA_ADMIN_USERNAME + " in WIKIDATA Workspace ..");
 
-    }
-
-    // === Workspace ===
-
-    private void assignWorkspace(Topic topic) {
-        Topic defaultWorkspace = dms.getTopic("uri", new SimpleValue(WS_WIKIDATA_URI));
-        dms.createAssociation(new AssociationModel("dm4.core.aggregation",
-            new TopicRoleModel(topic.getId(), "dm4.core.parent"),
-            new TopicRoleModel(defaultWorkspace.getId(), "dm4.core.child")
-        ));
     }
 
 }
