@@ -1,15 +1,14 @@
 
 package org.deepamehta.plugins.wikidata;
 
-import de.deepamehta.core.Association;
-import de.deepamehta.core.AssociationType;
-import de.deepamehta.core.RelatedAssociation;
-import de.deepamehta.core.Topic;
+import de.deepamehta.core.*;
 import de.deepamehta.core.model.*;
 import de.deepamehta.core.osgi.PluginActivator;
 import de.deepamehta.core.service.Inject;
 import de.deepamehta.core.service.ResultList;
 import de.deepamehta.core.service.Transactional;
+import de.deepamehta.core.service.event.PostCreateAssociationListener;
+import de.deepamehta.core.service.event.PostCreateTopicListener;
 import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
 import de.deepamehta.plugins.accesscontrol.AccessControlService;
 import de.deepamehta.plugins.workspaces.WorkspacesService;
@@ -25,6 +24,7 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -60,7 +60,8 @@ import org.xml.sax.SAXException;
 @Path("/wikidata")
 @Consumes("application/json")
 @Produces("application/json")
-public class WikidataSearchPlugin extends PluginActivator implements WikidataSearchService {
+public class WikidataSearchPlugin extends PluginActivator implements WikidataSearchService,
+                                                    PostCreateTopicListener, PostCreateAssociationListener {
 
     private Logger log = Logger.getLogger(getClass().getName());
 
@@ -122,13 +123,16 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     private final String WIKIDATA_ENTITY_URL_PREFIX = "//www.wikidata.org/wiki/";
     private final String WIKIDATA_PROPERTY_ENTITY_URL_PREFIX = "Property:";
     // private final String WIKIMEDIA_COMMONS_MEDIA_FILE_URL_PREFIX = "//commons.wikimedia.org/wiki/File:";
+
+    // ----- Instance variables
     
     @Inject
     private AccessControlService acService = null;
 
     @Inject
     private WorkspacesService wsService = null;
-    
+
+    Topic wikidataWorkspace = null;
     
     // --
     // --- Public REST API Endpoints
@@ -852,15 +856,10 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     // --
     
     @Override
-    public void assignToWikidataWorkspace(Topic topic) {
-        if (topic == null) return;
-        Topic wikidataWorkspace = dms.getTopic("uri", new SimpleValue(WS_WIKIDATA_URI));
-        if (!associationExists("dm4.core.aggregation", topic, wikidataWorkspace)) {
-            dms.createAssociation(new AssociationModel("dm4.core.aggregation",
-                new TopicRoleModel(topic.getId(), "dm4.core.parent"),
-                new TopicRoleModel(wikidataWorkspace.getId(), "dm4.core.child")
-            ));   
-        }
+    public void assignToWikidataWorkspace(DeepaMehtaObject object) {
+        if (object == null) return;
+        if (wikidataWorkspace == null) wikidataWorkspace = wsService.getWorkspace(WS_WIKIDATA_URI);
+        wsService.assignToWorkspace(object, wikidataWorkspace.getId());
     }
 
     private boolean associationExists(String edge_type, Topic item, Topic user) {
@@ -868,4 +867,22 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         return (results.size() > 0) ? true : false;
     }
 
+    @Override
+    public void postCreateTopic(Topic topic) {
+        if (   topic.getTypeUri().equals("org.deepamehta.wikidata.search_entity")
+            || topic.getTypeUri().equals("org.deepamehta.wikidata.commons_media")
+            || topic.getTypeUri().equals("org.deepamehta.wikidata.globe_coordinate")
+            || topic.getTypeUri().equals("org.deepamehta.wikidata.language")
+            || topic.getTypeUri().equals("org.deepamehta.wikidata.language_code_iso")
+            || topic.getTypeUri().equals("org.deepamehta.wikidata.language_name")) {
+            assignToWikidataWorkspace(topic);
+        }
+
+    }
+
+    public void postCreateAssociation(Association association) {
+        if (association.getTypeUri().equals("org.deepamehta.wikidata.claim_edge")) {
+            assignToWikidataWorkspace(association);
+        }
+    }
 }

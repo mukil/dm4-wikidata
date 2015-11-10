@@ -2,8 +2,9 @@
 package org.deepamehta.plugins.wikidata.service;
 
 import de.deepamehta.core.RelatedAssociation;
-import de.deepamehta.core.Topic;
 import de.deepamehta.core.service.ResultList;
+import de.deepamehta.core.Topic;
+import de.deepamehta.core.DeepaMehtaObject;
 
 /**
  * A very basic plugin to search and explore wikidata.
@@ -56,6 +57,6 @@ public interface WikidataSearchService {
      */
     ResultList<RelatedAssociation> getTopicRelatedAssociations(long topicId);
     
-    void assignToWikidataWorkspace(Topic topic);
+    void assignToWikidataWorkspace(DeepaMehtaObject object);
 
 }
