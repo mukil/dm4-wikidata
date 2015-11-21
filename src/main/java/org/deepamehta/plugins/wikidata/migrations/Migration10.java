@@ -12,7 +12,8 @@ import java.util.logging.Logger;
 
 
 /*
- * A very basic plugin for searching and turning wikidata-properties into association-types.
+ * Assigning new "Common Media" related <code>Topic Type</code> to the "Wikidata" workspace.
+ * Adjusting type definition of <code>Wikidata Commons Media</code> Topic Type.
  *
  * @author Malte Reißig (<malte@mikromedia.de>)
  * @website https://github.com/mukil/dm4-wikidata

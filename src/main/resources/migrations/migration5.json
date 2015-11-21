@@ -41,7 +41,7 @@
                 }
             ]
         },
-         {
+        {
             "value": "Wikidata Globe Coordinate",
             "uri": "org.deepamehta.wikidata.globe_coordinate",
             "data_type_uri": "dm4.core.composite",

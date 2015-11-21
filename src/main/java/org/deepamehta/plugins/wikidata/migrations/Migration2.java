@@ -16,7 +16,8 @@ import java.util.logging.Logger;
 
 
 /*
- * A very basic plugin for searching and turning wikidata-properties into association-types.
+ * Introducing a Public "Wikidata" Workspace (if non-existent) and assigning three basic types to it.
+ * Setting the Wikidata workspace owner to "admin".
  *
  * @author Malte Reißig (<malte@mikromedia.de>)
  * @website https://github.com/mukil/dm4-wikidata

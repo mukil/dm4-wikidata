@@ -24,16 +24,12 @@
             }
             var commands = []
             if (topic.type_uri === 'org.deepamehta.wikidata.search_entity') {
-                // if type is item
-                var entity_type = topic.childs['org.deepamehta.wikidata.search_entity_type'].value
-                if (entity_type === "item") {
-                    commands.push({is_separator: true, context: 'context-menu'})
-                    commands.push({
-                        label: 'Import claims',
-                        handler: importClaimedItems,
-                        context: ['context-menu', 'detail-panel-show']
-                    })
-                }
+                commands.push({is_separator: true, context: 'context-menu'})
+                commands.push({
+                    label: 'Import claims',
+                    handler: importClaimedItems,
+                    context: ['context-menu', 'detail-panel-show']
+                })
             }
             return commands
         })

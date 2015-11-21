@@ -35,7 +35,7 @@
                 if (topic.childs.hasOwnProperty('org.deepamehta.wikidata.search_entity_alias')) {
                     var aliases = topic.childs['org.deepamehta.wikidata.search_entity_alias']
                     for (var k=0; k < aliases.length; k++) {
-                        if (k > 1) alias_names += ', '
+                        if (k > 0 && k < aliases.length) alias_names += ', '
                         alias_names += aliases[k].value
                     }
                 }

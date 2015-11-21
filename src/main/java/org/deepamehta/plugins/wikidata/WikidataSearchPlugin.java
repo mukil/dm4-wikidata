@@ -12,7 +12,22 @@ import de.deepamehta.core.service.event.PostCreateTopicListener;
 import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
 import de.deepamehta.plugins.accesscontrol.AccessControlService;
 import de.deepamehta.plugins.workspaces.WorkspacesService;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
+import org.w3c.dom.DOMException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response.Status;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -24,37 +39,18 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response.Status;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
-import org.deepamehta.plugins.wikidata.service.WikidataSearchService;
-import org.w3c.dom.DOMException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 
 
 /**
- * A very basic plugin to search and explore wikidata.
- * Allows to turn a \"Wikidata Search Result Entity\" (of type=property) into DeepaMehta 4 AssociationTypes.
+ * A basic plugin service to search and import wikidata entities into DeepaMehta 4.
  *
- * @author Malte Reißig (<malte@mikromedia.de>)
- * @website https://github.com/mukil/dm4-wikidata
- * @version 0.0.4.1
+ * <a href="https://github.com/mukil/dm4-wikidata">Source Code Repository</a>
+ *
+ * @author Malte Reißig (<a href="mailto:malte@mikromedia.de">Contact</a>)
+ * @version 0.0.5-SNAPSHOT
  */
 
 @Path("/wikidata")
@@ -65,26 +61,25 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
 
     private Logger log = Logger.getLogger(getClass().getName());
 
-    private final String DEEPAMEHTA_VERSION = "DeepaMehta 4.4";
+    private final String DEEPAMEHTA_VERSION = "DeepaMehta 4.7";
     private final String WIKIDATA_TYPE_SEARCH_VERSION = "0.0.5-SNAPSHOT";
     private final String CHARSET = "UTF-8";
+
 
     // --- DeepaMehta 4 URIs
 
     private final String DM_WEBBROWSER_URL = "dm4.webbrowser.url";
 
+
     // --- Wikidata DeepaMehta URIs
 
     private final String WS_WIKIDATA_URI = "org.deepamehta.workspaces.wikidata";
-
     private final String WD_SEARCH_BUCKET_URI = "org.deepamehta.wikidata.search_bucket";
     private final String WD_SEARCH_QUERY_URI = "org.deepamehta.wikidata.search_query";
-
     private final String WD_LANGUAGE_URI = "org.deepamehta.wikidata.language";
     // private final String WD_LANGUAGE_NAME_URI = "org.deepamehta.wikidata.language_name";
     // private final String WD_LANGUAGE_ISO_CODE_URI = "org.deepamehta.wikidata.language_code_iso";
     private final String WD_LANGUAGE_DATA_URI_PREFIX = "org.deepamehta.wikidata.lang_";
-
     private final String WD_SEARCH_ENTITY_URI = "org.deepamehta.wikidata.search_entity";
     private final String WD_SEARCH_ENTITY_LABEL_URI = "org.deepamehta.wikidata.search_entity_label";
     private final String WD_SEARCH_ENTITY_TYPE_URI = "org.deepamehta.wikidata.search_entity_type";
@@ -92,9 +87,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     private final String WD_SEARCH_ENTITY_DESCR_URI = "org.deepamehta.wikidata.search_entity_description";
     private final String WD_SEARCH_ENTITY_ALIAS_URI = "org.deepamehta.wikidata.search_entity_alias";
     private final String WD_SEARCH_ENTITIY_DATA_URI_PREFIX = "org.deepamehta.wikidata.entity_";
-
     private final String WD_TEXT_TYPE_URI = "org.deepamehta.wikidata.text";
-    
     private final String WD_COMMONS_MEDIA_TYPE_URI = "org.deepamehta.wikidata.commons_media";
     private final String WD_COMMONS_MEDIA_NAME_TYPE_URI = "org.deepamehta.wikidata.commons_media_name";
     private final String WD_COMMONS_MEDIA_PATH_TYPE_URI = "org.deepamehta.wikidata.commons_media_path";
@@ -103,8 +96,9 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     private final String WD_COMMONS_AUTHOR_HTML_URI = "org.deepamehta.wikidata.commons_author_html";
     private final String WD_COMMONS_LICENSE_HTML_URI = "org.deepamehta.wikidata.commons_license_html";
     // private final String WD_GLOBE_COORDINATE_TYPE_URI = "org.deepamehta.wikidata.globe_coordinate";
-
     private final String WD_ENTITY_CLAIM_EDGE = "org.deepamehta.wikidata.claim_edge";
+
+
 
     // --- Wikidata Service URIs
 
@@ -114,17 +108,9 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             "https://www.wikidata.org/w/api.php?action=wbgetclaims&format=json"; // &ungroupedlist=0
     private final String WD_GET_ENTITY_ENDPOINT = "https://www.wikidata.org/w/api.php?action=wbgetentities"
             + "&props=info%7Caliases%7Clabels%7Cdescriptions&format=json"; // sitelinks%2Furls%7C
-    private final String WD_SEARCH_ENTITY_TYPE_PROPERTY = "property";
-    private final String WD_SEARCH_ENTITY_TYPE_ITEM = "item";
-    private final String WD_ENTITY_BASE_URI = "org.wikidata.entity.";
-    
-    private final String LANG_EN = "en";
-    
-    private final String WIKIDATA_ENTITY_URL_PREFIX = "//www.wikidata.org/wiki/";
-    private final String WIKIDATA_PROPERTY_ENTITY_URL_PREFIX = "Property:";
-    // private final String WIKIMEDIA_COMMONS_MEDIA_FILE_URL_PREFIX = "//commons.wikimedia.org/wiki/File:";
 
-    // ----- Instance variables
+    private final String WIKIDATA_ENTITY_URL_PREFIX = "//www.wikidata.org/wiki/";
+    private final String LANG_EN = "en";
     
     @Inject
     private AccessControlService acService = null;
@@ -133,10 +119,41 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     private WorkspacesService wsService = null;
 
     Topic wikidataWorkspace = null;
-    
-    // --
+
     // --- Public REST API Endpoints
-    // --
+
+    /**
+     * Turns a "Wikidata Search Entity" (of type="property") into a first-classe DeepaMehta 4 Association Type.
+     */
+    @GET
+    @Path("/property/turn/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Override
+    @Transactional
+    public Topic createWikidataAssociationType(@PathParam("id") long id) {
+        AssociationType association_type = null;
+        try {
+            Topic property_entity = dms.getTopic(id);
+            // 1) Create new Association Type model
+            String property_name = property_entity.getSimpleValue().toString();
+            AssociationTypeModel assoc_type_model = new AssociationTypeModel("org.deepamehta.wikidata.assoctype_"
+                    + property_entity.getUri().replaceAll(WD_SEARCH_ENTITIY_DATA_URI_PREFIX, ""),
+                    property_name, "dm4.core.text");
+            association_type = dms.createAssociationType(assoc_type_model);
+            // 2) Assign to "Wikidata" Workspace
+            assignTypeToWikidataWorkspace(association_type);
+            // 3) Associated search-result-entity to new assoc-type (to keep track)
+            dms.createAssociation(new AssociationModel("dm4.core.association",
+                    new TopicRoleModel(property_entity.getUri(), "dm4.core.default"),
+                    new TopicRoleModel(association_type.getUri(), "dm4.core.default")
+            ));
+            log.info("Turned wikidata property \""+ property_entity.getUri() +"\" into DM Association Type!");
+        } catch (Error e) {
+            throw new RuntimeException("Creating Association Type FAILED", e);
+        } finally {
+            return association_type;
+        }
+    }
 
     @GET
     @Path("/search/{entity}/{query}/{language_code}")
@@ -144,7 +161,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     @Override
     @Transactional
     public Topic searchWikidataEntity(@PathParam("query") String query, @PathParam("language_code") String lang,
-                @PathParam("entity") String type) {
+                                      @PathParam("entity") String type) {
         String json_result = "";
         StringBuffer resultBody = new StringBuffer();
         URL requestUri = null;
@@ -185,7 +202,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                 bucket_model.put(WD_SEARCH_QUERY_URI, query);
                 bucket_model.putRef(WD_LANGUAGE_URI, WD_LANGUAGE_DATA_URI_PREFIX + lang);
                 json_result = resultBody.toString();
-                processWikidataEntitySearch(json_result, bucket_model, type, lang);
+                buildWikidataSearchBucketModel(json_result, bucket_model, type, lang);
                 search_bucket = dms.createTopic(new TopicModel(WD_SEARCH_BUCKET_URI, bucket_model));
                 // workaround: addRef does not (yet) fetchComposite, so fetchComposite=true
                 search_bucket = dms.getTopic(search_bucket.getId());
@@ -203,12 +220,14 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     }
 
     @GET
-    @Path("/{entityId}/{language_code}")
+    @Path("/{entityId}/{language_code}/{doUpdate}/{doAliasUpdates}")
     @Produces(MediaType.APPLICATION_JSON)
     @Override
     @Transactional
-    public Topic getOrCreateWikidataEntity(@PathParam("entityId") String entityId,
-        @PathParam("language_code") String language_code) {
+    public Topic importWikidataEntity(@PathParam("entityId") String entityId,
+                                      @PathParam("language_code") String language_code,
+                                      @PathParam("doUpdate") boolean doUpdate,
+                                      @PathParam("doAliasUpdates") boolean doAliasUpdates) {
         String json_result = "";
         StringBuffer resultBody = new StringBuffer();
         URL requestUri = null;
@@ -254,11 +273,14 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                             new SimpleValue(WD_SEARCH_ENTITIY_DATA_URI_PREFIX + entityId));
                 if (existingEntity == null) {
                     entity = createWikidataSearchEntity(response_entity, language_code);
+                    entity.loadChildTopics();
+                } else if (doUpdate) {
+                    // Updates label, description (and maybe aliases) of related entities in this language.
+                    entity = updateWikidataSearchEntity(existingEntity, response_entity, language_code, doAliasUpdates);
+                    entity.loadChildTopics();
                 } else {
-                    // Updates labels, descriptions, aliases, url and (query) language
-                    entity = updateWikidataEntity(existingEntity, response_entity, language_code);
+                    entity = existingEntity;
                 }
-                entity.loadChildTopics();
             }
         } catch (MalformedURLException e) {
             log.warning("Wikidata Plugin: MalformedURLException ..." + e.getMessage());
@@ -271,16 +293,17 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         return entity;
     }
 
-    /** This method handles the "Import topics" command available on all "Wikidata Search Result" topics. */
-
+    /**
+     * Service endpoint for the "Import topics" command available on all "Wikidata Search Result"
+     * topics.
+     **/
     @GET
     @Path("/check/claims/{id}/{language_code}")
     @Produces(MediaType.APPLICATION_JSON)
     @Override
     @Transactional
-    public Topic loadClaimsAndRelatedWikidataItems(@PathParam("id") long topicId,
-            @PathParam("language_code") String language_option) {
-
+    public Topic importClaimsAndRelatedEntities(@PathParam("id") long topicId,
+                                                @PathParam("language_code") String language_option) {
         String json_result = "";
         StringBuffer resultBody = new StringBuffer();
         URL requestUri = null;
@@ -291,6 +314,9 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             language_option = LANG_EN;
         }
         String wikidataId = wikidataItem.getUri().replaceAll(WD_SEARCH_ENTITIY_DATA_URI_PREFIX, "");
+        // 1) update wikidate item in question, too
+        importWikidataEntity(wikidataId, language_option, true, true);
+        // 2) update all claims related to this item
         try {
             // 1) ### Authorize request
             // 2) ### be explicit and add "&rank=normal" to wbgetclaims-call, ### add "&props=references" somewhen
@@ -318,7 +344,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             } else {
                 json_result = resultBody.toString();
                 log.fine("Wikidata Claim Request Response: " + json_result);
-                processWikidataClaims(json_result, wikidataItem, language_option);
+                createWikidataClaims(json_result, wikidataItem, language_option);
                 log.info("Wikidata Claim Response is FINE");
             }
             wikidataItem.loadChildTopics(); // load all child topics
@@ -332,52 +358,98 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     }
 
     @GET
-    @Path("/property/turn/{id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Override
-    @Transactional
-    public Topic createWikidataAssociationType(@PathParam("id") long id) {
-        AssociationType association_type = null;
-        try {
-            Topic property_entity = dms.getTopic(id);
-            // 1) Create new Association Type model
-            String property_name = property_entity.getSimpleValue().toString();
-            AssociationTypeModel assoc_type_model = new AssociationTypeModel("org.deepamehta.wikidata.assoctype_"
-                    + property_entity.getUri().replaceAll(WD_SEARCH_ENTITIY_DATA_URI_PREFIX, ""),
-                    property_name, "dm4.core.text");
-            association_type = dms.createAssociationType(assoc_type_model);
-            // 2) Assign to "Wikidata" Workspace
-            assignToWikidataWorkspace(association_type);
-            // 3) Associated search-result-entity to new assoc-type (to keep track)
-            dms.createAssociation(new AssociationModel("dm4.core.association",
-                    new TopicRoleModel(property_entity.getUri(), "dm4.core.default"),
-                    new TopicRoleModel(association_type.getUri(), "dm4.core.default")
-                    ));
-            log.info("Turned wikidata property \""+ property_entity.getUri() +"\" into DM Association Type!");
-        } catch (Error e) {
-            log.warning("OH: The Wikidata Plugin experienced an unforeseen error! "+ e.getMessage());
-        } finally {
-            return association_type;
-        }
-    }
-
-    @GET
     @Path("/property/related/claims/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @Override
-    public ResultList<RelatedAssociation> getTopicRelatedAssociations (@PathParam("id") long topicId) {
-        Topic topic = dms.getTopic(topicId);
-        ResultList<RelatedAssociation> associations = topic.getRelatedAssociations("dm4.core.aggregation",
+    public ResultList<RelatedAssociation> getWikidataClaimsForPropertyEntity(@PathParam("id") long wdSearchEntity) {
+        Topic wikidataSearchEntity = dms.getTopic(wdSearchEntity);
+        ResultList<RelatedAssociation> associations = wikidataSearchEntity.getRelatedAssociations("dm4.core.aggregation",
                 "dm4.core.child", "dm4.core.parent", "org.deepamehta.wikidata.claim_edge");
         return associations.loadChildTopics();
     }
-    
-    // --
-    // ---  Wikidata Search (Application Specific) Private Methods
-    // --
 
-    private void processWikidataEntitySearch(String json_result, ChildTopicsModel search_bucket,
-            String type, String lang) {
+
+
+    // ---  Wikidata Search (Application Specific) Private Methods
+
+    /**
+     * Creates a topic of type *Wikdiata Search Entity* based on the wikidata base API response.
+     *
+     * @param entity_response   JSONObject  As returned by the HTTP wikidata base API.
+     * @param lang              String      ISO language code.
+     * @return
+     */
+    private Topic createWikidataSearchEntity(JSONObject entity_response, String lang) {
+        Topic entity = null;
+        DeepaMehtaTransaction tx = dms.beginTx();
+        try {
+            String id = entity_response.getString("id");
+            // Create new search entity composite
+            ChildTopicsModel entity_composite = buildWikidataSearchEntityModel(entity_response, lang);
+            TopicModel entity_model = new TopicModel(WD_SEARCH_ENTITIY_DATA_URI_PREFIX + id,
+                    WD_SEARCH_ENTITY_URI, entity_composite);
+            entity = dms.createTopic(entity_model);
+            log.info("Wikidata Search Entity Created (" +
+                entity_composite.getString(WD_SEARCH_ENTITY_TYPE_URI)+ "): \"" +
+                entity.getSimpleValue() +"\" "+entity.getId()+" - FINE!");
+            tx.success();
+            tx.finish();
+            return entity;
+        } catch (Exception ex) {
+            tx.failure();
+            throw new RuntimeException(ex);
+        }
+    }
+
+    /**
+     * Updates the given Wikidata Search Entity Topic about the values in the given JSON Object (response body).
+     *
+     * @param entity            Topic       Topic of type **Wikidata Search Entity**.
+     * @param entity_response   JSONObject  HTTP Entity Response Body from the wikdiata base API.
+     * @param lang              String      ISO language code
+     * @param doAliasUpdates   boolean     If set to true,**org.deepamehta.wikidata.search_entity_alias** entities
+     *                          will not be deleted and re-created.
+     * @return
+     */
+    private Topic updateWikidataSearchEntity(Topic entity, JSONObject entity_response, String lang, boolean doAliasUpdates) {
+        DeepaMehtaTransaction tx = dms.beginTx();
+        try {
+            if (doAliasUpdates) {
+                entity.loadChildTopics();
+                // what if entity is of type property?
+                if (entity.getChildTopics().has(WD_SEARCH_ENTITY_ALIAS_URI)) {
+                    List<RelatedTopic> aliasChilds = entity.getChildTopics().getTopics(WD_SEARCH_ENTITY_ALIAS_URI);
+                    Iterator<RelatedTopic> iterator = aliasChilds.iterator();
+                    while(iterator.hasNext()) {
+                        RelatedTopic aliasChild = iterator.next();
+                        log.info("REMOVING Wikdiata Item Alias " + aliasChild.getSimpleValue()
+                                + " from parent=\"" + aliasChild.getRelatedTopic(null, "dm4.core.child", "dm4.core.parent",
+                                null).getSimpleValue() + "\"");
+                        aliasChild.delete();
+                    }
+                }
+            }
+            // Update existing search entity topic
+            ChildTopicsModel entity_composite = buildWikidataSearchEntityModel(entity_response, lang);
+            TopicModel entity_model = new TopicModel(entity.getId(), entity_composite);
+            dms.updateTopic(entity_model);
+            log.fine("Wikidata Search Entity Updated (" +
+                entity_composite.getString(WD_SEARCH_ENTITY_TYPE_URI)+ "): \"" + entity.getSimpleValue() +"\" - FINE!");
+            tx.success();
+            tx.finish();
+            return entity;
+        } catch (Exception ex) {
+            tx.failure();
+            throw new RuntimeException(ex);
+        }
+    }
+
+    /**
+     *  Processes a wikidata search entities response as given by the wikidata base API and modifies the given
+     *  ChildTopicsModel accordingly.
+     **/
+    private void buildWikidataSearchBucketModel(String json_result, ChildTopicsModel search_bucket,
+                                                String type, String lang) {
         try {
             JSONObject response = new JSONObject(json_result);
             JSONArray result = response.getJSONArray("search");
@@ -402,13 +474,12 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                             entity_composite.put(WD_SEARCH_ENTITY_DESCR_URI, description);
                         }
                         entity_composite.put(DM_WEBBROWSER_URL, url);
-                        // ### fix. aliases add up
                         if (entity_response.has("aliases")) {
                             JSONArray aliases = entity_response.getJSONArray("aliases");
                             for (int a=0; a < aliases.length(); a++) {
                                 String alias = aliases.getString(a);
                                 entity_composite.add(WD_SEARCH_ENTITY_ALIAS_URI,
-                                    new TopicModel(WD_SEARCH_ENTITY_ALIAS_URI, new SimpleValue(alias)));
+                                        new TopicModel(WD_SEARCH_ENTITY_ALIAS_URI, new SimpleValue(alias)));
                             }
                         }
                         // set entity place in resultset
@@ -432,47 +503,11 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         }
     }
 
-    private Topic createWikidataSearchEntity(JSONObject entity_response, String lang) {
-        Topic entity = null;
-        DeepaMehtaTransaction tx = dms.beginTx();
-        try {
-            String id = entity_response.getString("id");
-            // Create new search entity composite
-            ChildTopicsModel entity_composite = buildWikidataEntityModel(entity_response, lang);
-            TopicModel entity_model = new TopicModel(WD_SEARCH_ENTITIY_DATA_URI_PREFIX + id,
-                    WD_SEARCH_ENTITY_URI, entity_composite);
-            entity = dms.createTopic(entity_model);
-            log.info("Wikidata Search Entity Created (" +
-                entity_composite.getString(WD_SEARCH_ENTITY_TYPE_URI)+ "): \"" +
-                entity.getSimpleValue() +"\" "+entity.getId()+" - FINE!");
-            tx.success();
-            tx.finish();
-            return entity;
-        } catch (Exception ex) {
-            tx.failure();
-            throw new RuntimeException(ex);
-        }
-    }
-
-    private Topic updateWikidataEntity(Topic entity, JSONObject entity_response, String lang) {
-        DeepaMehtaTransaction tx = dms.beginTx();
-        try {
-            // Update existing search entity topic
-            ChildTopicsModel entity_composite = buildWikidataEntityModel(entity_response, lang);
-            TopicModel entity_model = new TopicModel(entity.getId(), entity_composite);
-            dms.updateTopic(entity_model);
-            log.fine("Wikidata Search Entity Updated (" +
-                entity_composite.getString(WD_SEARCH_ENTITY_TYPE_URI)+ "): \"" + entity.getSimpleValue() +"\" - FINE!");
-            tx.success();
-            tx.finish();
-            return entity;
-        } catch (Exception ex) {
-            tx.failure();
-            throw new RuntimeException(ex);
-        }
-    }
-
-    private ChildTopicsModel buildWikidataEntityModel(JSONObject entity_response, String lang) {
+    /**
+     * Builds the model (ChildTopicsModel) for one **Wikidata Search Entity** based the response body of the wikidata
+     * base API.
+     * */
+    private ChildTopicsModel buildWikidataSearchEntityModel(JSONObject entity_response, String lang) {
         ChildTopicsModel entity_composite = null;
         try {
             String id = entity_response.getString("id");
@@ -517,9 +552,8 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                 }
             }
             // set wikidata url
-            if (type.equals(WD_SEARCH_ENTITY_TYPE_PROPERTY)) {
-                entity_composite.put(DM_WEBBROWSER_URL, WIKIDATA_ENTITY_URL_PREFIX
-                        + WIKIDATA_PROPERTY_ENTITY_URL_PREFIX + id);
+            if (type.equals("property")) {
+                entity_composite.put(DM_WEBBROWSER_URL, WIKIDATA_ENTITY_URL_PREFIX + "Property:" + id);
             } else {
                 entity_composite.put(DM_WEBBROWSER_URL, WIKIDATA_ENTITY_URL_PREFIX + id);
             }
@@ -543,18 +577,18 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
     }
 
     /**
-     * Fix 1: On each processing delete all outgoing claims and re-create (them) from scratch, this way we
-     * support *deletion* of claims at the remote-site without re-creating the referenced items.
-     * Fix 2: Process qualifierSnaks on each claim (extend migration for that).
-     * Fix 3: Process all references for each claim (simply as URLs?).
+     * Handles the response body of a HTTP Request to the CLAIM endpoint of wikidata base API.
+     *
+     * Fix 1: Process qualifierSnaks on each claim (extend migration for that).
+     * Fix 2: Process all references for each claim (simply as URLs?).
      */
-    private void processWikidataClaims(String json_result, Topic wikidataItem, String language_code) {
+    private void createWikidataClaims(String json_result, Topic wikidataItem, String language_code) {
         try {
             JSONObject response = new JSONObject(json_result);
             // the following assumes that our API response is not an error
             JSONObject result = response.getJSONObject("claims");
             // Delete all claims going out from this item (me)
-            removeAllClaimsFromThisItem(wikidataItem);
+            deleteWikidataClaims(wikidataItem);
             wikidataItem = dms.getTopic(wikidataItem.getId());
             // Then re-create all claims going out from this item (this is our "UPDATE")
             Iterator properties = result.keys();
@@ -563,7 +597,7 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             while (properties.hasNext()) {
                 String property_id = properties.next().toString();
                 // 1) Load related property-entity
-                propertyEntity = getOrCreateWikidataEntity(property_id, language_code);
+                propertyEntity = importWikidataEntity(property_id, language_code, false, false);
                 // HashMap<String, List<Topic>> all_entities = new HashMap<String, List<Topic>>();
                 JSONArray property_listing = result.getJSONArray(property_id);
                 // ### process all claims properly (delete and then create)
@@ -584,41 +618,40 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                         JSONObject snakDataValueValue = snakDataValue.getJSONObject("value");
                         long numericId = snakDataValueValue.getLong("numeric-id");
                         itemId = "Q" + numericId; // is this always of entity-type "item"? responses looks like.
-                        referencedItemEntity = getOrCreateWikidataEntity(itemId, language_code);
+                        referencedItemEntity = importWikidataEntity(itemId, language_code, false, false);
                     } else if (snakDataType.equals("commonsMedia")) {
                         // do relate wikidata.commons_media
-                        log.info(" --------- Commons Media Item! ------------");
                         if (snakDataValue.has("value")) {
                             String fileName = snakDataValue.getString("value");
-                            referencedItemEntity = getOrCreateWikimediaCommonsMediaTopic(fileName);
-                            log.info(" --- FINE! --- Related Wikimedia Commons File to Wikidata Item!");
+                            referencedItemEntity = getWikimediaCommonsMediaTopic(fileName);
                         }
                         /**  **/
                         // ### make use of WIKIMEDIA_COMMONS_MEDIA_FILE_URL_PREFIX and implement page-renderer
                     } else if (snakDataType.equals("globe-coordinate")) {
-                        // do relate wikidata.globe_coordinate
+                        // TODO: do relate wikidata.globe_coordinate
                         // log.fine("Globe Coordinate claimed via \"" + propertyEntity.getSimpleValue()
                                // + "\" ("+language_code+") DEBUG:");
                         // log.fine("  " + snakDataValue.toString());
                     } else if (snakDataType.equals("url")) {
                         if (snakDataValue.has("value")) {
-                            // ### getOrCreateWebResource()
+                            // TODO: ### getOrCreateWebResource()
                             String value = snakDataValue.getString("value");
                             log.warning("### SKIPPING URL => " + value);
                         }
                     } else if (snakDataType.equals("string")) {
                         if (snakDataValue.has("value")) {
                             String value = snakDataValue.getString("value");
-                            referencedItemEntity = getOrCreateWikidataText(value, language_code);
+                            referencedItemEntity = getWikidataTextTopic(value, language_code);
                         } else {
                             log.warning("Could not access wikidata-text value - json-response EMPTY!");
                         }
                     } else if (snakDataType.equals("quantity")) {
+                        // TODO: Fix datatype
                         if (snakDataValue.has("value")) {
                             JSONObject value = snakDataValue.getJSONObject("value");
                             if (value.has("amount")) {
                                 String amount = value.getString("amount");
-                                referencedItemEntity = getOrCreateWikidataText(amount, language_code);
+                                referencedItemEntity = getWikidataTextTopic(amount, language_code);
                             } else {
                                log.warning("Could not access wikidata-text value - AMOUNT EMPTY!");
                             }
@@ -632,21 +665,13 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                     }
                     // store topic reference to (new or already existing) wikidata-entity/ resp. -value topic
                     if (referencedItemEntity != null) {
-                        createWikidataClaimEdge(claim_guid, wikidataItem, referencedItemEntity,
+                        createWikidataClaim(claim_guid, wikidataItem, referencedItemEntity,
                             propertyEntity);
                     } else {
-                        log.warning("SKIPPED creating claim of type \""+snakDataType+"\" value for "
+                        log.fine("SKIPPED creating claim of type \""+snakDataType+"\" value for "
                                 + "\""+propertyEntity.getSimpleValue()+"\" on \"" + wikidataItem.getSimpleValue()+"\"");
                     }
                 }
-                /** Iterator entity_iterator = all_entities.keySet().iterator();
-                StringBuffer requesting_ids = new StringBuffer();
-                while (entity_iterator.hasNext()) {
-                    String entity_id = entity_iterator.next().toString();
-                    requesting_ids.append(entity_id + "|");
-                }
-                log.info("Requesting ALL ITEMS for " +property_id+ ": " + requesting_ids.toString());
-                omitting this solution bcause: "*": "Too many values supplied for parameter 'ids': the limit is 50" **/
             }
         } catch (JSONException ex) {
             log.warning("JSONException during processing a wikidata claim. " + ex.getMessage());
@@ -654,9 +679,13 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         }
     }
 
-    private void removeAllClaimsFromThisItem(Topic wikidataItem) {
+    /**
+     *  Delets all association of type *org.deepamehta.wikidata.claim_edge* related to the given <code>Wikidata Search
+     *  Entity</code>.
+     **/
+    private void deleteWikidataClaims(Topic wikidataItem) {
         List<Association> all_claims = wikidataItem.getAssociations();
-        ArrayList<Association> claims_to_be_deleted = new ArrayList();
+        ArrayList<Association> claims_to_be_deleted = new ArrayList<Association>();
         for (Association claim : all_claims) {
             if (claim.getTypeUri().equals(WD_ENTITY_CLAIM_EDGE)) {
                 if (claim.getRole1().getModel().getRoleTypeUri().equals("dm4.core.default")
@@ -673,35 +702,35 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                           claim.getRole1().getPlayerId() == wikidataItem.getId())) {
                         claims_to_be_deleted.add(claim);
                     } else {
-                        // ### log command to investigate database with a corrupt db (that is topics with
-                        // self-referential associations)
-                        log.warning("IDENTIFIED association to one-self, skip removal cause it would throw an Error");
+                        log.severe("IDENTIFIED self-referential association EXISTS IN DB - Data Inconsistency!");
                     }
                 }
             }
         }
         log.info("> " + claims_to_be_deleted.size() + " claims to be DELETED");
         for (Association edge : claims_to_be_deleted) {
-            DeepaMehtaTransaction dx = dms.beginTx();
-            try {
-                log.info("> Associaton \""+edge.getSimpleValue()+"\" is deleted (" + edge.getUri() + ")"
-                    + " from 1: \""+edge.getRole1().getPlayer().getSimpleValue()+"\" ==> "
-                    + " to 2: \""+edge.getRole2().getPlayer().getSimpleValue() + "\"");
-                dms.deleteAssociation(edge.getId());
-                dx.success();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            } finally {
-                dx.finish();
-            }
+            log.fine("> Associaton \""+edge.getSimpleValue()+"\" is to be deleted (" + edge.getUri() + ")\n"
+                + " from 1: \""+edge.getRole1().getPlayer().getSimpleValue()+"\" ==>\n"
+                + " to 2: \""+edge.getRole2().getPlayer().getSimpleValue() + "\"");
+            edge.delete();
         }
     }
 
     /**
-     * From Topic plays the role of a parent and to topic plays role of a child,
-     * just like in wikidata in the semantics of a *Claim*.
+     * The "from" Topic plays the role of a "parent" and the "to" topic plays role of a "child", analogous to the
+     * relation between wikidata items in the semantics of a *Claim*.
+     *
+     * @param   claim_guid
+     *      String  GUID of the Wikidata Claim.
+     * @param   from
+     *      Topic   Wikidata Search Entity topic of type "item" playing the role of a *dm4.core.parent* in the claim.
+     * @param   to
+     *      Topic   Wikidata Search Entity topic of type "item" playing the role of a *dm4.core.child* in the claim.
+     * @param   property
+     *      Topic   Wikidata Search Entity topic of type "property" playing the role of a "Wikidata Search Entity" in
+     *      the claim.
      */
-    private Association createWikidataClaimEdge(String claim_guid, Topic from, Topic to, Topic property) {
+    private Association createWikidataClaim(String claim_guid, Topic from, Topic to, Topic property) {
         Association claim = null;
         DeepaMehtaTransaction dx = dms.beginTx();
         try {
@@ -712,9 +741,6 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                     new TopicRoleModel(from.getId(), "dm4.core.parent"),
                     new TopicRoleModel(to.getId(), "dm4.core.child")));
                 claim.setUri(claim_guid);
-                /** log.info("Created \"Wikidata Claim\" with GUID: " + claim.getUri() +" for \"" + two.getSimpleValue() +
-                                " (property: " + property.getSimpleValue() +
-                                "\") for \"" + one.getSimpleValue() + "\" - FINE"); **/
                 // 2) Assign wikidata property (=Wikidata Search Entity) to this claim-edge
                 claim.setChildTopics(new ChildTopicsModel().putRef(WD_SEARCH_ENTITY_URI,
                         property.getUri()));
@@ -732,7 +758,13 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         }
     }
 
-    private Topic getOrCreateWikidataText(String value, String lang) {
+    /**
+     * Note: ...
+     * @param value
+     * @param lang
+     * @return
+     */
+    private Topic getWikidataTextTopic(String value, String lang) {
         Topic textValue = null;
         // 1) query for text-value
         try {
@@ -759,14 +791,20 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             throw new RuntimeException(ex);
         }
     }
-    
-    private Topic getOrCreateWikimediaCommonsMediaTopic(String fileName) {
+
+    /**
+     * Note: ...
+     * @param fileName
+     * @return
+     */
+    private Topic getWikimediaCommonsMediaTopic(String fileName) {
         Topic mediaTopic = dms.getTopic(WD_COMMONS_MEDIA_NAME_TYPE_URI, new SimpleValue(fileName));
         if (mediaTopic == null) { // create new media topic
             DeepaMehtaTransaction dx = dms.beginTx();
             ChildTopicsModel mediaCompositeModel = new ChildTopicsModel()
                 .put(WD_COMMONS_MEDIA_NAME_TYPE_URI, fileName);
-            enrichAboutWikimediaCommonsMetaData(mediaCompositeModel, fileName);
+            // load item with filename via markus's commons file media API
+            loadWikimediaCommonsMediaItem(mediaCompositeModel, fileName);
             TopicModel mediaTopicModel = new TopicModel(WD_COMMONS_MEDIA_TYPE_URI, mediaCompositeModel);
             try {
                 mediaTopic = dms.createTopic(mediaTopicModel).loadChildTopics();
@@ -785,7 +823,12 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
         return mediaTopic;
     }
 
-    private void enrichAboutWikimediaCommonsMetaData(ChildTopicsModel model, String fileName) {
+    /**
+     * ...
+     * @param model
+     * @param fileName
+     */
+    private void loadWikimediaCommonsMediaItem(ChildTopicsModel model, String fileName) {
         // 1) fetch data by name from http://tools.wmflabs.org/magnus-toolserver/commonsapi.php?image=
         URL requestUri;
         StringBuffer resultBody = new StringBuffer();
@@ -835,7 +878,6 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
                 // model.put(WD_COMMONS_MEDIA_DESCR_TYPE_URI, defaultLanguageDescr.getTextContent());
                 model.put(WD_COMMONS_AUTHOR_HTML_URI, authorText);
                 model.put(WD_COMMONS_LICENSE_HTML_URI, permissionText);
-                log.fine(" --- Wikimedia Commons Response is FINE ---");
             }
         } catch (MalformedURLException e) {
             log.log(Level.SEVERE, "Wikidata Plugin: MalformedURLException ...", e);
@@ -845,21 +887,27 @@ public class WikidataSearchPlugin extends PluginActivator implements WikidataSea
             log.log(Level.SEVERE, "Wikidata Plugin: IOException ...", ioe);
         } catch (SAXException ex) {
             log.log(Level.SEVERE, null, ex);
-
         } catch (DOMException e) {
             log.log(Level.SEVERE, null , e);
         }
     }
-    
-    // --
+
+
+
     // --- DeepaMehta 4 Plugin Related Private Methods
-    // --
-    
+
     @Override
     public void assignToWikidataWorkspace(DeepaMehtaObject object) {
         if (object == null) return;
         if (wikidataWorkspace == null) wikidataWorkspace = wsService.getWorkspace(WS_WIKIDATA_URI);
         wsService.assignToWorkspace(object, wikidataWorkspace.getId());
+    }
+
+    @Override
+    public void assignTypeToWikidataWorkspace(Type type) {
+        if (type == null) return;
+        if (wikidataWorkspace == null) wikidataWorkspace = wsService.getWorkspace(WS_WIKIDATA_URI);
+        wsService.assignTypeToWorkspace(type, wikidataWorkspace.getId());
     }
 
     private boolean associationExists(String edge_type, Topic item, Topic user) {
