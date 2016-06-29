@@ -53,7 +53,7 @@
                 dm4c.toolbar.search_button.button("enable")
 
                 // load language options                                                // do sort, do fetch-composites
-                var languages = dm4c.restc.get_topics('org.deepamehta.wikidata.language', true, true).items
+                var languages = dm4c.restc.get_topics('org.deepamehta.wikidata.language', true, true)
 
                 // create wikidata search menu
                 var $container = $('<div class="wikidata-search">')

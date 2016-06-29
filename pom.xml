@@ -6,36 +6,42 @@
 
     <name>DeepaMehta 4 Wikidata Search</name>
     <groupId>org.deepamehta</groupId>
-    <artifactId>dm47-wikidata-search</artifactId>
+    <artifactId>dm48-wikidata-search</artifactId>
     <version>0.4.2-SNAPSHOT</version>
     <packaging>bundle</packaging>
 
     <parent>
         <groupId>de.deepamehta</groupId>
-        <artifactId>deepamehta-plugin-parent</artifactId>
-        <version>4.7</version>
+        <artifactId>deepamehta-plugin</artifactId>
+        <version>4.8</version>
     </parent>
+
+    <!--properties>
+        <dm4.deploy.dir>/home/malted/source/mikro/deepamehta/bundle-deploy</dm4.deploy.dir>
+        <dm4.deploy.dir>/home/malted/Schreibtisch/DeepaMehta4/bundle-deploy</dm4.deploy.dir>
+        <dm4.deploy.dir>/home/malted/Downloads/deepamehta-4.8.1/bundle-deploy</dm4.deploy.dir>
+    </properties-->
 
     <dependencies>
         <dependency>
             <groupId>de.deepamehta</groupId>
             <artifactId>deepamehta-accesscontrol</artifactId>
-            <version>4.7</version>
+            <version>4.8</version>
         </dependency>
         <dependency>
             <groupId>de.deepamehta</groupId>
             <artifactId>deepamehta-workspaces</artifactId>
-            <version>4.7</version>
+            <version>4.8</version>
         </dependency>
         <dependency>
             <groupId>de.deepamehta</groupId>
             <artifactId>deepamehta-contacts</artifactId>
-            <version>4.7</version>
+            <version>4.8</version>
         </dependency>
         <dependency>
             <groupId>de.deepamehta</groupId>
             <artifactId>deepamehta-files</artifactId>
-            <version>4.7</version>
+            <version>4.8</version>
         </dependency>
     </dependencies>
 

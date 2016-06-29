@@ -2,15 +2,11 @@ package org.deepamehta.plugins.wikidata.migrations;
 
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.TopicType;
-import de.deepamehta.core.model.AssociationModel;
-import de.deepamehta.core.model.SimpleValue;
-import de.deepamehta.core.model.TopicModel;
-import de.deepamehta.core.model.TopicRoleModel;
 import de.deepamehta.core.service.Inject;
 import de.deepamehta.core.service.Migration;
 import de.deepamehta.core.service.accesscontrol.SharingMode;
-import de.deepamehta.plugins.accesscontrol.AccessControlService;
-import de.deepamehta.plugins.workspaces.WorkspacesService;
+import de.deepamehta.accesscontrol.AccessControlService;
+import de.deepamehta.workspaces.WorkspacesService;
 
 import java.util.logging.Logger;
 
@@ -56,9 +52,9 @@ public class Migration2 extends Migration {
         if (wdWorkspace == null) throw new RuntimeException("Creating Wikidata Workspace FAILED!");
         acService.setWorkspaceOwner(wdWorkspace, DEEPAMEHTA_ADMIN_USERNAME);
         // 2) assign all types to our new workspace
-        TopicType searchType = dms.getTopicType(WD_SEARCH_BUCKET);
-        TopicType seachEntity = dms.getTopicType(WD_SEARCH_ENTITY);
-        TopicType languageCode = dms.getTopicType(WD_ISO_LANGUAGE_CODE);
+        TopicType searchType = dm4.getTopicType(WD_SEARCH_BUCKET);
+        TopicType seachEntity = dm4.getTopicType(WD_SEARCH_ENTITY);
+        TopicType languageCode = dm4.getTopicType(WD_ISO_LANGUAGE_CODE);
         wsService.assignTypeToWorkspace(searchType, wdWorkspace.getId());
         wsService.assignTypeToWorkspace(seachEntity, wdWorkspace.getId());
         wsService.assignTypeToWorkspace(languageCode, wdWorkspace.getId());

@@ -2,10 +2,10 @@
 package org.deepamehta.plugins.wikidata;
 
 import de.deepamehta.core.RelatedAssociation;
-import de.deepamehta.core.service.ResultList;
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.Type;
 import de.deepamehta.core.DeepaMehtaObject;
+import de.deepamehta.core.DeepaMehtaType;
+import java.util.List;
 
 /**
  * A plugin to search and explore wikidata with the dm4-webclient.
@@ -66,10 +66,10 @@ public interface WikidataSearchService {
      *
      *  @param id                   long Topic id of a "Wikidata Search Entity"
      */
-    ResultList<RelatedAssociation> getWikidataClaimsForPropertyEntity(long topicId);
+    List<RelatedAssociation> getWikidataClaimsForPropertyEntity(long topicId);
     
     void assignToWikidataWorkspace(DeepaMehtaObject object);
 
-    void assignTypeToWikidataWorkspace(Type type);
+    void assignTypeToWikidataWorkspace(DeepaMehtaType type);
 
 }

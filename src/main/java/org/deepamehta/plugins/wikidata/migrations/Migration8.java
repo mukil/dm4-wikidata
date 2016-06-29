@@ -23,7 +23,7 @@ public class Migration8 extends Migration {
     public void run() {
 
         // 1) Register the new page-renderer
-        TopicType searchEntity = dms.getTopicType(WD_COMMONS_MEDIA);
+        TopicType searchEntity = dm4.getTopicType(WD_COMMONS_MEDIA);
         searchEntity.getViewConfig().addSetting("dm4.webclient.view_config", "dm4.webclient.page_renderer_uri",
                 "org.deepamehta.wikidata.commons_media_renderer");
 

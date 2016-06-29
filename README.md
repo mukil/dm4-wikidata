@@ -45,6 +45,18 @@ This software is released under the terms of the GNU General Public License in V
 
 # Version History
 
+0.4.2, Upcoming..
+- Adapted to and compatible with DeepaMehta 4.8
+- Better support for collaboration through shared workspaces (since 4.7)
+- More robust updating of already imported entities
+- Bugfix: Aliases don't add up (over imports) anymore
+
+0.4.1, ...
+- Built directions into imported claims
+- More robust wikimedia commons items integration
+
+Release not further documented.
+
 0.0.4, Dec 26, 2014
 - Introduced rendering and import of "claimed" Commons Media topics
 - Wikidata navigation from a property to all imported items (claimed with such) works

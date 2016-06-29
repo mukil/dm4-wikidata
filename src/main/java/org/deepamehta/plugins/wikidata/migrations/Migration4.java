@@ -1,9 +1,6 @@
 package org.deepamehta.plugins.wikidata.migrations;
 
-import de.deepamehta.core.AssociationType;
-import de.deepamehta.core.Topic;
 import de.deepamehta.core.TopicType;
-import de.deepamehta.core.model.*;
 import de.deepamehta.core.service.Migration;
 import java.util.logging.Logger;
 
@@ -26,10 +23,10 @@ public class Migration4 extends Migration {
     public void run() {
 
         // 1) fetch my two topic-types
-        TopicType searchEntity = dms.getTopicType(WD_SEARCH_ENTITY);
-        TopicType searchEntityType = dms.getTopicType(WD_SEARCH_ENTITY_TYPE);
+        TopicType searchEntity = dm4.getTopicType(WD_SEARCH_ENTITY);
+        TopicType searchEntityType = dm4.getTopicType(WD_SEARCH_ENTITY_TYPE);
         // 2) relate my new topic-type to the existing one
-        searchEntity.addAssocDef(new AssociationDefinitionModel("dm4.core.composition_def",
+        searchEntity.addAssocDef(mf.newAssociationDefinitionModel("dm4.core.composition_def",
                 searchEntity.getUri(), searchEntityType.getUri(), "dm4.core.one", "dm4.core.one"));
         log.info("1) Assigned \"Search Entity Type\" to \"Search Entity\"");
         // "dm4.webclient.page_renderer_uri" : "org.deepamehta.wikidata.search_entity_renderer"

@@ -1,11 +1,10 @@
 package org.deepamehta.plugins.wikidata.migrations;
 
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.model.ChildTopicsModel;
 import de.deepamehta.core.service.Inject;
 import de.deepamehta.core.service.Migration;
-import de.deepamehta.plugins.workspaces.WorkspacesService;
-import de.deepamehta.plugins.accesscontrol.AccessControlService;
+import de.deepamehta.accesscontrol.AccessControlService;
+import de.deepamehta.workspaces.WorkspacesService;
 
 import org.codehaus.jettison.json.JSONObject;
 import org.codehaus.jettison.json.JSONException;
@@ -41,7 +40,7 @@ public class Migration11 extends Migration {
         // setting label
         workspace.setSimpleValue("Wikidata");
         try {
-            workspace.setChildTopics(new ChildTopicsModel(new JSONObject("{\"dm4.workspaces.name\": \"Wikidata\"}")));
+            workspace.setChildTopics(mf.newChildTopicsModel(new JSONObject("{\"dm4.workspaces.name\": \"Wikidata\"}")));
         } catch (JSONException je) {
             throw new RuntimeException("Correcting name of Wikidata Workspace with Migration11 FAILED", je);
         }

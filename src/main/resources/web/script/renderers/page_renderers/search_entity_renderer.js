@@ -47,7 +47,7 @@
                 var related_properties = []
                 var otherwise_related_topics = []
                 // fetch all related topics (with their relating assoc)
-                var related_topics = dm4c.restc.get_topic_related_topics(topic.id).items // ### assoc has no child topics
+                var related_topics = dm4c.restc.get_topic_related_topics(topic.id) // ### assoc has no child topics
                 // and populate list to group topics by their related assoc (wikidata property)-type
                 for (var index in related_topics) {
                     var related_topic = related_topics[index]
@@ -151,7 +151,7 @@
                         default_topic_renderer.render_page(topic)
                     render('<div class="field-label">Wikidata Claims</div>')
                     var $container_p = $('<div class="field-value">')
-                    var related_claims = data.items
+                    var related_claims = data
                     var $claim_listing = $('<ul class="claim-listing">')
                     for (var claim_idx in related_claims) {
                         var claim = related_claims[claim_idx]
