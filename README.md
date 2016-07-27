@@ -45,7 +45,7 @@ This software is released under the terms of the GNU General Public License in V
 
 # Version History
 
-0.4.2, Upcoming..
+0.4.2, Jul 27, 2016
 - Adapted to and compatible with DeepaMehta 4.8
 - Better support for collaboration through shared workspaces (since 4.7)
 - More robust updating of already imported entities
